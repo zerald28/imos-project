@@ -1,0 +1,191 @@
+/* ==========================================================
+   CalendarView Module Styles (Scoped to .calendarView)
+   ========================================================== */
+
+/* ========== THEME VARIABLES ========== */
+:root {
+  --imos-primary: oklch(35.949% 0.08335 152.071);
+  --fc-border-color: #e5e7eb;
+  --fc-page-bg-color: #ffffff;
+  --fc-text-color: rgba(17, 24, 39, 0.95);
+  --fc-today-bg-color: rgba(34,197,94,0.15);
+    --primary: oklch(0.723 0.219 149.579);
+}
+
+.calendarView {
+  --imos-primary: oklch(25.5% 0.04 193.4);
+}
+
+/* ==========================================================
+   DARK THEME (Scoped)
+   ========================================================== */
+:global(.dark) .calendarView {
+  --fc-text-color: #f3f4f6;
+  --fc-border-color: color-mix(in oklab, var(--imos-primary) 80%, black 20%);
+  --fc-page-bg-color: color-mix(in oklab, var(--imos-primary) 30%, black 70%);
+  --fc-today-bg-color: color-mix(in oklab, var(--imos-primary) 70%, white 15%);
+  --fc-list-event-hover-bg-color: color-mix(in oklab, var(--imos-primary) 60%, white 10%);
+}
+
+/* ==========================================================
+   BUTTONS & TOOLBAR
+   ========================================================== */
+.calendarView :global(.fc .fc-button) {
+  background-color: var(--imos-primary) !important;
+  border: none !important;
+  color: white !important;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;  /* increased padding for readability */
+  font-size: 1rem;          /* bigger text */
+  transition: all 0.2s ease-in-out;
+  min-width: 2.5rem;
+}
+
+.calendarView :global(.fc .fc-button.fc-button-active) {
+  background-color: color-mix(in oklab, var(--imos-primary) 80%, white 20%) !important;
+}
+
+.calendarView :global(.fc .fc-button:hover) {
+  filter: brightness(1.1);
+}
+
+.calendarView :global(.fc .fc-toolbar) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendarView :global(.fc .fc-toolbar-title) {
+  font-size: 1.25rem; /* larger title */
+  font-weight: 600;
+  text-align: center;
+  flex: 1 1 100%;
+  color: var(--fc-text-color);
+}
+
+/* ==========================================================
+   CALENDAR BODY / GRID
+   ========================================================== */
+.calendarView :global(.fc) {
+  width: 100% !important;
+  height: auto !important;
+  font-size: 1rem; /* base font bigger */
+  background-color: var(--fc-page-bg-color);
+  color: var(--fc-text-color);
+  border-color: var(--fc-border-color);
+}
+
+.calendarView :global(.fc .fc-scrollgrid) {
+  border-color: var(--fc-border-color) !important;
+}
+
+.calendarView :global(.fc .fc-scrollgrid-section) {
+  background-color: color-mix(in oklab, var(--fc-page-bg-color) 90%, var(--imos-primary) 0%);
+  border-bottom: 1px solid var(--fc-border-color) !important;
+}
+
+.calendarView :global(.fc .fc-col-header-cell) {
+  background-color: color-mix(in oklab, var(--imos-primary) 100%, var(--fc-page-bg-color) 0%);
+  color: white;
+  border-color: var(--fc-border-color);
+  font-weight: 600;          /* bigger header font */
+  font-size: 1rem;
+  
+}
+
+/* TimeGridWeek: make today's column header text visible */
+.calendarView :global( .fc-col-header-cell.fc-day-today) {
+    color: var(--imos-primary) !important;
+    font-weight: 700; /* optional, make it bold */
+}
+
+
+.calendarView :global(.fc .fc-daygrid-day-frame),
+.calendarView :global(.fc .fc-timegrid-slot),
+.calendarView :global(.fc .fc-list-day) {
+  border-color: var(--fc-border-color) !important;
+}
+
+/* ==========================================================
+   EVENTS & DAY NUMBERS
+   ========================================================== */
+.calendarView :global(.fc-daygrid-day-events) {
+  margin: 0 !important;
+  max-height: 3.5rem !important;  /* taller events */
+  overflow-y: hidden;
+}
+
+.calendarView :global(.fc .fc-col-header-cell-cushion) {
+   
+    padding: 0px 0px;
+}
+.calendarView :global(.fc .fc-daygrid-block-event .fc-event-time, .fc-daygrid-block-event .fc-event-title ){
+
+  padding: 0px;
+}
+
+
+
+.calendarView :global(.fc-daygrid-event) {
+  font-size: 0.85rem !important;  /* larger text */
+  line-height: 1.4 !important;
+  padding: 0.25rem 0rem;
+}
+
+.calendarView :global(.fc-daygrid-event-dot) {
+  width: 0.6rem !important;   /* bigger dot */
+  height: 0.6rem !important;
+  background-color: var(--imos-primary) !important;
+}
+
+.calendarView :global(.fc-daygrid-day-number) {
+  color: var(--fc-text-color);
+  font-size: 0.85rem !important;
+}
+
+
+/* ==========================================================
+   TIMEGRID / WEEK VIEW
+   ========================================================== */
+.calendarView :global(.fc .fc-timegrid-slot-label) {
+  font-size: 0.85rem;
+}
+
+.calendarView :global(.fc .fc-timegrid-event) {
+  font-size: 0.9rem !important;
+  line-height: 1.4 !important;
+  padding: 0.3rem 0.5rem !important;
+}
+
+/* ==========================================================
+   LIST VIEW
+   ========================================================== */
+.calendarView :global(.fc .fc-list-event-title) {
+  font-size: 1rem !important;
+}
+
+.calendarView :global(.fc .fc-list-event-time) {
+  font-size: 0.9rem !important;
+}
+
+/* ==========================================================
+   HOVER EFFECTS
+   ========================================================== */
+.calendarView :global(.fc-daygrid-event:hover) {
+  text-decoration: underline;
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.calendarView :global(.fc-day-today) {
+  background-color: var(--fc-today-bg-color) !important;
+}
+
+/* ==========================================================
+   RESPONSIVE: MOBILE / TABLET
+   ========================================================== */
+
+   /* TODAY COLUMN HEADER TEXT COLOR in timeGridWeek only */

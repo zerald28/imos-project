@@ -1,0 +1,10 @@
+.lex-editor {
+  border: 1px solid #d1d5db; /* Tailwind slate-300 */
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-height: 300px;
+  background-color: white;
+}
+.lex-editor :global(*) {
+  font-family: inherit;
+}

@@ -1,0 +1,229 @@
+/* ==========================================================
+   CalendarView Module Styles (Scoped to .calendarView)
+   ========================================================== */
+
+/* ========== THEME VARIABLES ========== */
+:root {
+  
+  --imos-primary: oklch(0.696 0.17 162.48);
+  --fc-border-color: #e5e7eb;
+  --fc-page-bg-color: #ffffff;
+  --fc-text-color: rgba(17, 24, 39, 0.95);
+  --fc-today-bg-color: rgba(34,197,94,0.15);
+   --primary: oklch(0.723 0.219 149.579);
+   
+}
+
+.calendarView {
+    --imos-primary: oklch(0.696 0.17 162.48);
+}
+
+/* ==========================================================
+   DARK THEME (Scoped)
+   ========================================================== */
+:global(.dark) .calendarView {
+  --fc-text-color: #f3f4f6; /* Light gray text */
+  --fc-border-color: color-mix(in oklab, var(--imos-primary) 30%, black 00%);
+  --fc-page-bg-color: #111827; /* Tailwind gray-900 */
+  --fc-today-bg-color: color-mix(in oklab, var(--imos-primary) 70%, white 15%);
+  --fc-list-event-hover-bg-color: color-mix(in oklab, var(--imos-primary) 60%, white 10%);
+}
+
+/* ==========================================================
+   BUTTONS & TOOLBAR
+   ========================================================== */
+.calendarView :global(.fc .fc-button) {
+  background-color: var(--imos-primary) !important;
+  border: none !important;
+  color: white !important;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  transition: all 0.2s ease-in-out;
+  min-width: 2rem;
+}
+
+.calendarView :global(.fc .fc-button.fc-button-active) {
+  background-color: color-mix(in oklab, var(--imos-primary) 80%, white 20%) !important;
+}
+
+.calendarView :global(.fc .fc-button:hover) {
+  filter: brightness(1.1);
+}
+
+.calendarView :global(.fc .fc-toolbar) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.calendarView :global(.fc .fc-toolbar-chunk) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.calendarView :global(.fc .fc-toolbar-title) {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  flex: 1 1 100%;
+  color: var(--fc-text-color);
+}
+
+/* ==========================================================
+   CALENDAR BODY / GRID
+   ========================================================== */
+.calendarView :global(.fc) {
+  width: 100% !important;
+  height: auto !important;
+  font-size: clamp(10px, 2.5vw, 14px);
+  background-color: var(--fc-page-bg-color);
+  color: var(--fc-text-color);
+  border-color: var(--fc-border-color);
+  border-radius: 0.75rem; /* <-- add this */
+  overflow: hidden;       /* <-- ensures content respects rounded corners */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+
+.calendarView :global(.fc .fc-scrollgrid) {
+  border-color: var(--fc-border-color) !important;
+  border-width: 1px !important;
+  border-radius: 1rem;
+  
+}
+
+.calendarView :global(.fc .fc-scrollgrid-section) {
+  border-radius: 0.75rem; /* match the container */
+  overflow: hidden;
+}
+
+
+.calendarView :global(.fc .fc-col-header-cell) {
+  background-color: color-mix(in oklab, var(--imos-primary) 100%, var(--fc-page-bg-color) 0%);
+  color: white;
+  border-color: var(--fc-border-color);
+  font-weight: 500;
+}
+
+.calendarView :global(.fc .fc-daygrid-day-frame),
+.calendarView :global(.fc .fc-timegrid-slot),
+.calendarView :global(.fc .fc-list-day) {
+  border-color: var(--fc-border-color) !important;
+}
+
+/* ==========================================================
+   DARK MODE GRID COLORS
+   ========================================================== */
+:global(.dark) .calendarView :global(.fc .fc-col-header-cell) {
+  background-color: var(--imos-primary) !important;
+  color: #f3f4f6 !important;
+}
+
+:global(.dark) .calendarView :global(.fc .fc-scrollgrid-section) {
+  background-color: transparent !important;
+}
+
+:global(.dark) .calendarView :global(.fc .fc-daygrid-day-frame),
+:global(.dark) .calendarView :global(.fc .fc-timegrid-slot),
+:global(.dark) .calendarView :global(.fc .fc-list-day) {
+  border-color: color-mix(in oklab, var(--imos-primary) 80%, black 20%) !important;
+}
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+.calendarView :global(.fc .fc-toolbar) {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.calendarView :global(.fc .fc-toolbar-title) {
+  font-size: clamp(0.8rem, 2vw, 1rem);
+}
+
+.calendarView :global(.fc .fc-button) {
+  padding: 0.2rem 0.4rem;
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  border-radius: 0.4rem;
+}
+
+/* ==========================================================
+   DAYGRID EVENT (Minimal style)
+   ========================================================== */
+.calendarView :global(.fc-daygrid-day-events) {
+  margin: 0 !important;
+  max-height: 2.5rem !important;
+  overflow-y: hidden;
+}
+
+.calendarView :global(.fc-daygrid-event-dot) {
+  background-color: var(--imos-primary) !important;
+}
+
+.calendarView :global(.fc-daygrid-day-number) {
+  color: var(--fc-text-color);
+}
+
+/* ==========================================================
+   INTERACTIONS
+   ========================================================== */
+.calendarView :global(.fc-daygrid-event:hover) {
+  text-decoration: underline;
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+
+/* ////////////////////////////// */
+
+    /* ==========================================================
+   DAYGRID EVENT STYLE — DOT INSTEAD OF ROUNDED BOX
+   ========================================================== */
+
+/* Remove the background and border of events */
+/* ===============================
+   DayGrid Event — Dot Style Fix
+   =============================== */
+.calendarView :global(.fc-daygrid-event) {
+  background: none !important;     /* remove default colored box */
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+  line-height: 1.1 !important;
+  color: var(--fc-text-color) !important;  /* make text visible */
+  font-weight: 500;                         /* a little bold */
+}
+
+/* Dot before title */
+.calendarView :global(.fc-daygrid-event-dot) {
+  width: 0.4rem !important;
+  height: 0.4rem !important;
+  border-radius: 9999px !important;
+  background-color: var(--imos-primary) !important;
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+
+/* Hide event time (keep only title) */
+.calendarView :global(.fc-daygrid-event .fc-event-time) {
+  display: none !important;
+}
+
+/* Ensure event title is visible in light/dark mode */
+.calendarView :global(.fc-daygrid-event) {
+  color: var(--imos-primary) !important; /* <-- added */
+}
