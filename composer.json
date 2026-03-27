@@ -74,6 +74,12 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "vercel":[
+            "run npm build",
+            "mkdir -p /vercel/output/static",
+            "cp -r public/build/vercel/output/static/",
+            "php artisan migrate --force"
         ]
     },
     "extra": {
