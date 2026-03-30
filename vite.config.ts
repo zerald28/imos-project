@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 
 export default defineConfig({
     plugins: [
@@ -13,17 +12,15 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        wayfinder({
-            formVariants: true,
-        }),
+        // Remove Wayfinder completely for Vercel
     ],
     esbuild: {
         jsx: 'automatic',
     },
-    // No server config needed for production builds
     build: {
-        // Production optimizations
         minify: 'esbuild',
         sourcemap: false,
+        // Skip building if in Vercel environment
+        ...(process.env.VERCEL && { build: false }),
     },
 });
