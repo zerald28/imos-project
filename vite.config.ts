@@ -1,8 +1,8 @@
-import { wayfinder } from '@laravel/vite-plugin-wayfinder';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 
 export default defineConfig({
     plugins: [
@@ -20,15 +20,10 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
-     server: {
-        host: true,       // bind to all interfaces (allows LAN access)
-        port: 5175,       // fixed port (avoid auto-changing each run)
-        cors: true,       // allows Laravel (8000) to load assets
-        hmr: {
-            host: '192.168.0.103',  // ⚡ your laptop's IPv4 LAN address
-            port: 5175,           // must match server.ports
-            protocol: 'ws',
-        },
+    // No server config needed for production builds
+    build: {
+        // Production optimizations
+        minify: 'esbuild',
+        sourcemap: false,
     },
 });
-

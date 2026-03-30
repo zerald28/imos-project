@@ -10,7 +10,7 @@ use App\Models\Swine\SwineTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class SwineController extends Controller
+class SwineCrudController extends Controller
 {
     /**
      * Display a listing of the active swine for the authenticated farmer.
