@@ -76,10 +76,10 @@
             "@php artisan test"
         ],
         "vercel":[
-          
+         
             "mkdir -p /vercel/output/static",
-            "cp -r public/build /vercel/output/static/",
-            "php artisan migrate --force"
+            "cp -r public/build /vercel/output/static/"
+        
         ]
     },
     "extra": {
