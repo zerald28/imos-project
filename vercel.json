@@ -1,5 +1,4 @@
 {
-    "framework": null,
     "outputDirectory": "public",
     "functions": {
         "api/lambda.php": {
@@ -8,6 +7,5 @@
     },
     "rewrites": [
         {"source": "/(.*)", "destination": "api/lambda.php"}
-    ],
-    "buildCommand": "composer install --no-dev --optimize-autoloader --no-interaction --classmap-authoritative"
+    ]
 }
