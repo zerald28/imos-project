@@ -13,16 +13,15 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        wayfinder({
+        // Only run Wayfinder in development
+        ...(process.env.NODE_ENV !== 'production' ? [wayfinder({
             formVariants: true,
-        }),
+        })] : []),
     ],
     esbuild: {
         jsx: 'automatic',
     },
-    // No server config needed for production builds
     build: {
-        // Production optimizations
         minify: 'esbuild',
         sourcemap: false,
     },
