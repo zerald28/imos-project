@@ -8,5 +8,5 @@
     "rewrites": [
         {"source": "/(.*)", "destination": "api/lambda.php"}
     ],
-    "buildCommand": "./vercel-build.sh"
+    "buildCommand": "composer vercel"
 }
