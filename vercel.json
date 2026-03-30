@@ -1,5 +1,4 @@
 {
-    "$schema": "https://openapi.vercel.sh/vercel.json",
     "outputDirectory": "public",
     "functions": {
         "api/lambda.php": {
@@ -8,7 +7,5 @@
     },
     "rewrites": [
         {"source": "/(.*)", "destination": "api/lambda.php"}
-    ],
-    "buildCommand": "./vercel-build.sh",
-    "installCommand": "echo 'Skipping npm install - using pre-built assets'"
+    ]
 }
