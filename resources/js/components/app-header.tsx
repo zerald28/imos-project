@@ -9,7 +9,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeftRightIcon, BookOpen, CornerDownLeft, Folder, LayoutGrid, Menu, MessageSquare, Search, SquareArrowUpRight, StoreIcon, Syringe } from 'lucide-react';

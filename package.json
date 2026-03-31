@@ -1,7 +1,7 @@
 {
     "private": true,
     "type": "module",
-   "scripts": {
+    "scripts": {
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
@@ -9,7 +9,8 @@
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
-        "types": "tsc --noEmit"
+        "types": "tsc --noEmit",
+        "build:vercel": "mkdir -p resources/js/routes && echo 'export default {};' > resources/js/routes.js && vite build"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
@@ -22,11 +23,11 @@
         "eslint-config-prettier": "^10.0.1",
         "eslint-plugin-react": "^7.37.3",
         "eslint-plugin-react-hooks": "^5.1.0",
-        "laravel-echo": "^2.2.4",
+        "laravel-echo": "^2.3.1",
         "prettier": "^3.4.2",
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.6.11",
-        "pusher-js": "^8.4.0",
+        "pusher-js": "^8.4.3",
         "typescript-eslint": "^8.23.0"
     },
     "dependencies": {
