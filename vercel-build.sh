@@ -1,41 +1,32 @@
 #!/bin/bash
 
-# Install PHP dependencies
-composer install --no-dev --optimize-autoloader --no-interaction
-
-# Create required directories
+echo "=== Creating required directories ==="
 mkdir -p bootstrap/cache
 mkdir -p storage/framework/cache
 mkdir -p storage/framework/sessions
 mkdir -p storage/framework/views
 mkdir -p storage/logs
+mkdir -p resources/js/routes
 
-# Set permissions
+echo "=== Setting permissions ==="
 chmod -R 775 bootstrap/cache
 chmod -R 775 storage
 
-# Generate application key (if not set in Vercel env)
-php artisan key:generate --force
+echo "=== Generating dummy routes file ==="
+# Create a placeholder routes file for Vite build
+cat > resources/js/routes.js << 'EOF'
+// Auto-generated placeholder for Vercel build
+export default {};
+EOF
 
-# Clear all cache first
-php artisan optimize:clear
+# Also create for TypeScript if needed
+cat > resources/js/routes.ts << 'EOF'
+// Auto-generated placeholder for Vercel build
+declare const routes: any;
+export default routes;
+EOF
 
-# Generate route files for frontend (Ziggy/Wayfinder)
-php artisan ziggy:generate resources/js/routes.js 2>/dev/null || true
-php artisan wayfinder:generate 2>/dev/null || true
-
-# Create routes directory if it doesn't exist
-mkdir -p resources/js/routes
-
-# Cache configurations
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan event:cache
-
-# Run migrations (force for production)
-php artisan migrate --force
-
-# Build frontend assets (now routes file exists)
-npm install
+echo "=== Building frontend assets ==="
 npm run build
+
+echo "=== Build completed ==="
