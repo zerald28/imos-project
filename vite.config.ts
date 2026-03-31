@@ -2,25 +2,57 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+import fs from 'fs';
 
 export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
         react(),
         tailwindcss(),
-        // Remove Wayfinder completely for Vercel
+        {
+            name: 'ensure-routes-file',
+            buildStart() {
+                // Ensure routes file exists
+                const routesPath = path.resolve(__dirname, 'resources/js/routes.js');
+                const routesTsPath = path.resolve(__dirname, 'resources/js/routes.ts');
+                
+                if (!fs.existsSync(routesPath) && !fs.existsSync(routesTsPath)) {
+                    fs.writeFileSync(routesPath, 'export default {};');
+                    console.log('✓ Created placeholder routes file');
+                }
+            }
+        }
     ],
-    esbuild: {
-        jsx: 'automatic',
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+        },
     },
     build: {
-        minify: 'esbuild',
-        sourcemap: false,
-        // Skip building if in Vercel environment
-        ...(process.env.VERCEL && { build: false }),
+        rollupOptions: {
+            // Don't externalize these - bundle them instead
+            external: [],
+            onwarn(warning, warn) {
+                // Ignore missing module warnings during build
+                if (warning.code === 'MODULE_NOT_FOUND' || 
+                    warning.message?.includes('Failed to resolve import')) {
+                    console.warn('⚠️ Warning:', warning.message);
+                    return;
+                }
+                warn(warning);
+            },
+        },
+        // Ensure dependencies are properly bundled
+        commonjsOptions: {
+            include: [/node_modules/],
+            transformMixedEsModules: true,
+        },
+    },
+    optimizeDeps: {
+        include: ['laravel-echo', 'pusher-js', 'react', 'react-dom'],
     },
 });

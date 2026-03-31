@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Exit on error
 set -e
 
 echo "🔧 Creating Laravel directories..."
@@ -13,16 +12,22 @@ echo "🔧 Setting permissions..."
 chmod -R 775 bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage 2>/dev/null || true
 
-echo "🔧 Ensuring routes file exists..."
-if [ ! -f resources/js/routes.js ] && [ ! -f resources/js/routes.ts ]; then
-    echo "Creating placeholder routes file..."
-    echo "export default {};" > resources/js/routes.js
-fi
+echo "🔧 Creating placeholder files..."
+cat > resources/js/routes.js << 'EOF'
+// Placeholder for Vercel build
+export default {};
+EOF
+
+cat > resources/js/routes.ts << 'EOF'
+// Placeholder for Vercel build
+declare const routes: any;
+export default routes;
+EOF
 
 echo "📦 Installing dependencies..."
-npm ci --only=production || npm install
+npm ci --production=false || npm install
 
 echo "🏗️ Building assets..."
-npm run build
+NODE_ENV=production npm run build
 
-echo "✅ Build completed successfully!"
+echo "✅ Build completed!"
