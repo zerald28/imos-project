@@ -11,8 +11,6 @@ echo "🔧 Setting permissions..."
 chmod -R 775 bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage 2>/dev/null || true
 
-# REMOVE the placeholder file creation — these break the build
-
 echo "📦 Installing dependencies..."
 npm ci --production=false || npm install
 
