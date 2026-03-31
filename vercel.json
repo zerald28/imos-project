@@ -1,6 +1,6 @@
 {
     "buildCommand": "bash vercel-build.sh",
-    "installCommand": "composer install --no-dev --optimize-autoloader --no-interaction && npm install",
+    "installCommand": "npm install",
     "outputDirectory": "public",
     "functions": {
         "api/lambda.php": {

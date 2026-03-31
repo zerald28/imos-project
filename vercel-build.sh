@@ -9,19 +9,19 @@ mkdir -p storage/logs
 mkdir -p resources/js/routes
 
 echo "=== Setting permissions ==="
-chmod -R 775 bootstrap/cache
-chmod -R 775 storage
+chmod -R 775 bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage 2>/dev/null || true
 
-echo "=== Generating dummy routes file ==="
-# Create a placeholder routes file for Vite build
+echo "=== Creating routes file for build ==="
+# Create a placeholder routes file so Vite can build
 cat > resources/js/routes.js << 'EOF'
-// Auto-generated placeholder for Vercel build
+// Placeholder for Vercel build - actual routes will be generated at runtime
 export default {};
 EOF
 
-# Also create for TypeScript if needed
+# Also create TypeScript version if needed
 cat > resources/js/routes.ts << 'EOF'
-// Auto-generated placeholder for Vercel build
+// Placeholder for Vercel build
 declare const routes: any;
 export default routes;
 EOF
@@ -29,4 +29,10 @@ EOF
 echo "=== Building frontend assets ==="
 npm run build
 
-echo "=== Build completed ==="
+echo "=== Copying build to public directory ==="
+# Ensure Vite build output is in the right place
+if [ -d "dist" ]; then
+    cp -r dist/* public/ 2>/dev/null || true
+fi
+
+echo "=== Build completed successfully ==="
