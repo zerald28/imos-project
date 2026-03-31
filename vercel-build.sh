@@ -10,12 +10,22 @@ mkdir -p storage/framework/sessions
 mkdir -p storage/framework/views
 mkdir -p storage/logs
 
-# Set permissions (Vercel uses default user)
+# Set permissions
 chmod -R 775 bootstrap/cache
 chmod -R 775 storage
 
-# Generate application key
+# Generate application key (if not set in Vercel env)
 php artisan key:generate --force
+
+# Clear all cache first
+php artisan optimize:clear
+
+# Generate route files for frontend (Ziggy/Wayfinder)
+php artisan ziggy:generate resources/js/routes.js 2>/dev/null || true
+php artisan wayfinder:generate 2>/dev/null || true
+
+# Create routes directory if it doesn't exist
+mkdir -p resources/js/routes
 
 # Cache configurations
 php artisan config:cache
@@ -23,9 +33,9 @@ php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 
-# Run migrations (if needed)
+# Run migrations (force for production)
 php artisan migrate --force
 
-# Build frontend assets
+# Build frontend assets (now routes file exists)
 npm install
 npm run build
