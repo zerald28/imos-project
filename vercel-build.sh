@@ -1,13 +1,34 @@
 #!/bin/bash
-echo "🚀 Starting Vercel build..."
 
-# Only install PHP dependencies
-composer install --no-dev --optimize-autoloader --no-interaction --classmap-authoritative
+# Install PHP dependencies
+composer install --no-dev --optimize-autoloader --no-interaction
 
-# Verify assets exist
-if [ ! -d "public/build" ]; then
-    echo "⚠️ Warning: public/build not found! Assets may be missing."
-    exit 1
-fi
+# Create required directories
+mkdir -p bootstrap/cache
+mkdir -p storage/framework/cache
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+mkdir -p storage/logs
 
-echo "✅ Build completed in $(($SECONDS / 60)) minutes"
+# Set permissions
+chmod -R 775 bootstrap/cache
+chmod -R 775 storage
+
+# Generate application key (if not set in Vercel env)
+php artisan key:generate --force
+
+# Clear all cache first
+php artisan optimize:clear
+
+# Cache configurations
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# Run migrations (force for production)
+php artisan migrate --force
+
+# Build frontend assets
+npm install
+npm run build

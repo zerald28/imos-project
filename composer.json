@@ -75,12 +75,19 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
-        "vercel":[
-         
-            "mkdir -p /vercel/output/static",
-            "cp -r public/build /vercel/output/static/"
-        
-        ]
+       "vercel": [
+        "mkdir -p bootstrap/cache",
+        "mkdir -p storage/framework/cache",
+        "mkdir -p storage/framework/sessions", 
+        "mkdir -p storage/framework/views",
+        "mkdir -p storage/logs",
+        "chmod -R 775 bootstrap/cache",
+        "chmod -R 775 storage",
+        "@php artisan package:discover --ansi",
+        "@php artisan config:cache",
+        "@php artisan route:cache",
+        "@php artisan view:cache"
+    ]
     },
     "extra": {
         "laravel": {

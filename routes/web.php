@@ -120,7 +120,7 @@ Route::get('/swine/production/exportcsv', [DashboardController::class, 'exportCS
     Route::get('/insurance/{id}/pdf/preview', [LivestockInsuranceController::class, 'previewPdf'])
         ->name('insurance.pdf.preview');
  Route::get('/insurance/{id}/pdf/previews', [LivestockInsuranceController::class, 'previewPdfs'])
-        ->name('insurance.pdf.preview');
+        ->name('insurance.pdf.previews');
 
     Route::get('/insurance/{id}/pdf/downloads', [LivestockInsuranceController::class, 'downloadPdf'])
         ->name('insurance.pdf.download');
@@ -129,7 +129,7 @@ Route::get('/swine/production/exportcsv', [DashboardController::class, 'exportCS
         ->name('insurance.pdf.downloadempty'); //the empty pdf
 
       Route::get('/insurance/{id}/pdf/downloadreport', [LivestockInsuranceController::class, 'downloadreport'])
-        ->name('insurance.pdf.download');
+        ->name('insurance.pdf.downloadreport');
 
     Route::get('/insurance', [\App\Http\Controllers\ImosAdmin\InsuranceController::class, 'index'])
         ->name('admin.insurance.index');
@@ -306,7 +306,7 @@ Route::get('/livestock-loss-notice/multiple', [LivestockLossNoticeController::cl
     Route::post('/insurance/signature/{id}/save', [InsuranceController::class, 'saveSignature'])
      ->name('insurance.signature.save');
      Route::post('/insurance/signature/{id}/saves', [InsuranceController::class, 'saveSignatures'])
-     ->name('insurance.signature.save');
+     ->name('insurance.signature.saves');
      Route::get('/insurance/{id}/pdf/download', [InsuranceController::class, 'download']);
 
 
@@ -322,7 +322,7 @@ Route::get('/insurance/signature/{id}', [InsuranceController::class, 'getSignatu
 
 // routes/web.php
 Route::post('/insurance/signature/{application}', [App\Http\Controllers\ImosAdmin\InsuranceController::class, 'save'])
-    ->name('insurance.signature.save');
+    ->name('insurance.signatureaplication.save');
 
 
 
