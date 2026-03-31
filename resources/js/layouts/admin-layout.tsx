@@ -12,24 +12,24 @@ interface AppLayoutProps {
 
 // ✅ Must define a functional component before calling hooks
 export default function AppLayout({ children, breadcrumbs, ...props }: AppLayoutProps) {
-  useEffect(() => {
-    const echo = (window as any).Echo;
-    if (!echo) return;
+  // useEffect(() => {
+  //   const echo = (window as any).Echo;
+  //   if (!echo) return;
 
-    const channel = echo.join("presence.chat")
-      .here((users: any[]) => {
-        console.log("Users currently online:", users);
-        window.dispatchEvent(new CustomEvent("onlineUsersUpdate", { detail: users }));
-      })
-      .joining((user: any) => {
-        window.dispatchEvent(new CustomEvent("onlineUsersUpdate", { detail: [user] }));
-      })
-      .leaving((user: any) => {
-        window.dispatchEvent(new CustomEvent("userLeft", { detail: user.id }));
-      });
+  //   const channel = echo.join("presence.chat")
+  //     .here((users: any[]) => {
+  //       console.log("Users currently online:", users);
+  //       window.dispatchEvent(new CustomEvent("onlineUsersUpdate", { detail: users }));
+  //     })
+  //     .joining((user: any) => {
+  //       window.dispatchEvent(new CustomEvent("onlineUsersUpdate", { detail: [user] }));
+  //     })
+  //     .leaving((user: any) => {
+  //       window.dispatchEvent(new CustomEvent("userLeft", { detail: user.id }));
+  //     });
 
-    return () => echo.leave("presence.chat");
-  }, []);
+  //   return () => echo.leave("presence.chat");
+  // }, []);
 
  const flash = (props as any).flash || {};
 
