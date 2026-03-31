@@ -2,57 +2,28 @@ import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import path from 'path';
-import fs from 'fs';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 
 export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
         react(),
         tailwindcss(),
-        {
-            name: 'ensure-routes-file',
-            buildStart() {
-                // Ensure routes file exists
-                const routesPath = path.resolve(__dirname, 'resources/js/routes.js');
-                const routesTsPath = path.resolve(__dirname, 'resources/js/routes.ts');
-                
-                if (!fs.existsSync(routesPath) && !fs.existsSync(routesTsPath)) {
-                    fs.writeFileSync(routesPath, 'export default {};');
-                    console.log('✓ Created placeholder routes file');
-                }
-            }
-        }
+        wayfinder({
+            formVariants: true,
+        }),
     ],
-    resolve: {
-        alias: {
-            '@': '/resources/js',
-        },
+    esbuild: {
+        jsx: 'automatic',
     },
+    // No server config needed for production builds
     build: {
-        rollupOptions: {
-            // Don't externalize these - bundle them instead
-            external: [],
-            onwarn(warning, warn) {
-                // Ignore missing module warnings during build
-                if (warning.code === 'MODULE_NOT_FOUND' || 
-                    warning.message?.includes('Failed to resolve import')) {
-                    console.warn('⚠️ Warning:', warning.message);
-                    return;
-                }
-                warn(warning);
-            },
-        },
-        // Ensure dependencies are properly bundled
-        commonjsOptions: {
-            include: [/node_modules/],
-            transformMixedEsModules: true,
-        },
-    },
-    optimizeDeps: {
-        include: ['laravel-echo', 'pusher-js', 'react', 'react-dom'],
+        // Production optimizations
+        minify: 'esbuild',
+        sourcemap: false,
     },
 });

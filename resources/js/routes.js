@@ -3,3 +3,16 @@ if (typeof window !== 'undefined' && typeof window.Ziggy !== 'undefined') {
   Object.assign(Ziggy.routes, window.Ziggy.routes);
 }
 export { Ziggy };
+
+
+import { route } from 'ziggy-js';
+
+
+
+export const home        = (params) => route('home', params);
+export const login       = (params) => route('login', params);
+export const logout      = (params) => route('logout', params);
+export const register    = (params) => route('register', params);
+export const dashboard   = (params) => route('dashboard', params);
+export const appearance  = (params) => route('appearance', params);
+
