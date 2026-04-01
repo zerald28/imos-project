@@ -25,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
-            \App\Http\Middleware\UpdateLastSeen::class, // ← add here
+            // \App\Http\Middleware\UpdateLastSeen::class, // ← add here
             
         ]);
 
