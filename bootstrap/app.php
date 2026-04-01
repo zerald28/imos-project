@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
            $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
-             'updateLastSeen' => \App\Http\Middleware\UpdateLastSeen::class,
+            //  'updateLastSeen' => \App\Http\Middleware\UpdateLastSeen::class,
         ]);
         $middleware->web(append: [
             HandleAppearance::class,
