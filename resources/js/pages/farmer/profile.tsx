@@ -448,7 +448,7 @@ export default function UserProfile({ user, applications }: Props) {
                       <div className="p-3 sm:p-4 bg-gradient-to-br from-emerald-50 to-transparent dark:from-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-800">
                         <h4 className="font-semibold text-emerald-800 dark:text-emerald-400 mb-2 sm:mb-3 flex items-center gap-1 text-sm sm:text-base">
                           Swine Purpose Summary
-                        </h4>
+                        </h4> 
                         <div className="space-y-1.5 sm:space-y-2">
                           {Object.entries(user.purpose_counts || {}).map(([purpose, count], index) => (
                             <div key={purpose} className="flex justify-between items-center p-1.5 sm:p-2 rounded-lg bg-white/50 dark:bg-gray-700/50">
@@ -574,80 +574,93 @@ export default function UserProfile({ user, applications }: Props) {
                 )}
 
                 {/* Insurance Tab Content */}
-                {activeTab === "insurance" && (
-                  <div className="space-y-3 sm:space-y-4">
-                    {applications.length === 0 ? (
-                      <div className="text-center py-6 sm:py-8 bg-slate-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-slate-200 dark:border-gray-600">
-                        <ShieldCheck className="h-8 w-8 sm:h-12 sm:w-12 text-slate-300 dark:text-gray-500 mx-auto mb-2 sm:mb-3" />
-                        <p className="text-slate-400 dark:text-gray-500 text-sm sm:text-base">No insurance applications found.</p>
+               {activeTab === "insurance" && (
+  <div className="space-y-3 sm:space-y-4">
+    {applications.length === 0 ? (
+      <div className="text-center py-6 sm:py-8 bg-slate-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-slate-200 dark:border-gray-600">
+        <ShieldCheck className="h-8 w-8 sm:h-12 sm:w-12 text-slate-300 dark:text-gray-500 mx-auto mb-2 sm:mb-3" />
+        <p className="text-slate-400 dark:text-gray-500 text-sm sm:text-base">No insurance applications found.</p>
+      </div>
+    ) : (
+      applications.map((app) => (
+        <Card key={app.id} className="border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+              <div className="space-y-1.5 sm:space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-[10px] sm:text-xs">
+                    {app.cover_type}
+                  </Badge>
+                  <Badge variant="outline" className={`${statusBadge(app.status)} text-[10px] sm:text-xs`}>
+                    {app.status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-0.5 sm:gap-y-1 text-xs sm:text-sm">
+                  <p className="dark:text-gray-300"><span className="text-slate-500 dark:text-gray-400">Created:</span> {app.created_at}</p>
+                  <p className="dark:text-gray-300"><span className="text-slate-500 dark:text-gray-400">Updated:</span> {app.updated_at}</p>
+                  <p className="dark:text-gray-300"><span className="text-slate-500 dark:text-gray-400">Animals:</span> {app.number_of_heads}</p>
+                </div>
+              </div>
+
+              <Link
+                href={route('insurance.application.show', app.id)}
+                className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors inline-flex items-center gap-1 self-start md:self-center"
+              >
+                <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> View Application
+              </Link>
+            </div>
+
+            <details className="mt-2 sm:mt-3">
+              <summary className="cursor-pointer text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium flex items-center gap-1">
+                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                View Animals ({app.animals.length})
+              </summary>
+              
+             
+              
+              <ul className="mt-1.5 sm:mt-2 space-y-1 pl-3 sm:pl-4">
+                {app.animals.length === 0 ? (
+                  <li className="text-slate-400 dark:text-gray-500 text-xs sm:text-sm">No animals in this application.</li>
+                ) : (
+                  app.animals.map((animal) => (
+                    <li key={animal.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-gray-700 py-1.5 sm:py-2 gap-2">
+                      <span className="text-xs sm:text-sm dark:text-gray-300">
+                        <span className="font-medium">Ear Mark:</span> {animal.ear_mark}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={animal.veterinary_report_id ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] sm:text-xs' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400 text-[10px] sm:text-xs'}>
+                          {animal.veterinary_report_id ? 'Has Report' : 'No Report'}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-[10px] sm:text-xs border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 h-7 sm:h-8"
+                          onClick={() => openRequestModal({ id: animal.id, ear_mark: animal.ear_mark })}
+                        >
+                          Request Vet
+                        </Button>
                       </div>
-                    ) : (
-                      applications.map((app) => (
-                        <Card key={app.id} className="border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-                          <CardContent className="p-3 sm:p-4">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
-                              <div className="space-y-1.5 sm:space-y-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 text-[10px] sm:text-xs">
-                                    {app.cover_type}
-                                  </Badge>
-                                  <Badge variant="outline" className={`${statusBadge(app.status)} text-[10px] sm:text-xs`}>
-                                    {app.status.replace('_', ' ').toUpperCase()}
-                                  </Badge>
-                                </div>
-                                <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-0.5 sm:gap-y-1 text-xs sm:text-sm">
-                                  <p className="dark:text-gray-300"><span className="text-slate-500 dark:text-gray-400">Created:</span> {app.created_at}</p>
-                                  <p className="dark:text-gray-300"><span className="text-slate-500 dark:text-gray-400">Updated:</span> {app.updated_at}</p>
-                                  <p className="dark:text-gray-300"><span className="text-slate-500 dark:text-gray-400">Animals:</span> {app.number_of_heads}</p>
-                                </div>
-                              </div>
-
-                              <Link
-                                href={route('insurance.application.show', app.id)}
-                                className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors inline-flex items-center gap-1 self-start md:self-center"
-                              >
-                                <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> View Application
-                              </Link>
-                            </div>
-
-                            <details className="mt-2 sm:mt-3">
-                              <summary className="cursor-pointer text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-medium flex items-center gap-1">
-                                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
-                                View Animals ({app.animals.length})
-                              </summary>
-                              <ul className="mt-1.5 sm:mt-2 space-y-1 pl-3 sm:pl-4">
-                                {app.animals.length === 0 ? (
-                                  <li className="text-slate-400 dark:text-gray-500 text-xs sm:text-sm">No animals in this application.</li>
-                                ) : (
-                                  app.animals.map((animal) => (
-                                    <li key={animal.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-gray-700 py-1.5 sm:py-2 gap-2">
-                                      <span className="text-xs sm:text-sm dark:text-gray-300">
-                                        <span className="font-medium">Ear Mark:</span> {animal.ear_mark}
-                                      </span>
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className={animal.veterinary_report_id ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] sm:text-xs' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-400 text-[10px] sm:text-xs'}>
-                                          {animal.veterinary_report_id ? 'Has Report' : 'No Report'}
-                                        </Badge>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="text-[10px] sm:text-xs border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 h-7 sm:h-8"
-                                          onClick={() => openRequestModal({ id: animal.id, ear_mark: animal.ear_mark })}
-                                        >
-                                          Request Vet
-                                        </Button>
-                                      </div>
-                                    </li>
-                                  ))
-                                )}
-                              </ul>
-                            </details>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
+                    </li>
+                  ))
                 )}
+              </ul>
+               {/* Button to view DA Personnel - Added here */}
+              <div className="mt-3 mb-2 flex justify-end">
+                <Link
+                  href="/DA/personnels" // Update this route to match your actual route
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-green-600/10 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  View DA Personnel/Technicians
+                </Link>
+              </div>
+            </details>
+          </CardContent>
+        </Card>
+      ))
+    )}
+  </div>
+)}
 
                 {/* Swine List Tab Content - Responsive */}
                 {activeTab === "list" && (

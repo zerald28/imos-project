@@ -110,29 +110,73 @@ const SignatureEditor: React.FC<SignatureEditorProps> = ({
     });
   };
 
-  const handleSaveWithAdjustments = (shouldPrint: boolean = false) => {
-    const HORIZONTAL_ADJUST = -115;
-    const VERTICAL_ADJUST = -49;
+ // In veterinary signatureEditor.tsx - Replace the handleSaveWithAdjustments function
 
-    const realX = (pos.x - pdfOffset.left + HORIZONTAL_ADJUST) * pdfOffset.scale;
-    const realY = (pos.y - pdfOffset.top + VERTICAL_ADJUST) * pdfOffset.scale;
-    const realWidth = size.width * pdfOffset.scale;
-    const realHeight = size.height * pdfOffset.scale;
+const handleSaveWithAdjustments = async (shouldPrint: boolean = false) => {
+  const HORIZONTAL_ADJUST = -115;
+  const VERTICAL_ADJUST = -49;
 
-    if (shouldPrint) {
-      onSave(realX, realY, realWidth, realHeight);
-    } else {
-      axios.post(`/insurance/signature/${pdfId}/saves`, { 
+  const realX = (pos.x - pdfOffset.left + HORIZONTAL_ADJUST) * pdfOffset.scale;
+  const realY = (pos.y - pdfOffset.top + VERTICAL_ADJUST) * pdfOffset.scale;
+  const realWidth = size.width * pdfOffset.scale;
+  const realHeight = size.height * pdfOffset.scale;
+
+  if (shouldPrint) {
+    try {
+      // First save the signature position
+      await axios.post(`/insurance/signature/${pdfId}/saves`, { 
         x: realX, 
         y: realY, 
         width: realWidth, 
         height: realHeight,
         veterinary_disease_report_id: pdfId,
-      })
-        .then(() => alert("Signature position saved successfully!"))
-        .catch(() => alert("Failed to save signature!"));
+      });
+      
+      alert("Signature saved successfully! Opening print dialog...");
+      
+      // Then fetch the PDF and trigger print
+      const response = await axios.get(`/insurance/${pdfId}/pdf/downloadreport`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob URL
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      // Open in new window and trigger print
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+          // Optional: Close after print or keep open
+          // printWindow.onafterprint = () => printWindow.close();
+        };
+      }
+      
+      // Call onSave callback if needed
+      onSave(realX, realY, realWidth, realHeight);
+      
+    } catch (error) {
+      console.error("Failed to save or print:", error);
+      alert("Failed to save signature or print document. Please try again.");
     }
-  };
+  } else {
+    // Save only without printing
+    try {
+      await axios.post(`/insurance/signature/${pdfId}/saves`, { 
+        x: realX, 
+        y: realY, 
+        width: realWidth, 
+        height: realHeight,
+        veterinary_disease_report_id: pdfId,
+      });
+      alert("Signature position saved successfully!");
+    } catch (error) {
+      console.error("Failed to save signature:", error);
+      alert("Failed to save signature!");
+    }
+  }
+};
 
   // Inline mode content
   const renderContent = () => (

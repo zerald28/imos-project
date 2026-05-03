@@ -49,7 +49,7 @@ export default function CalendarPage({
     <span className="w-4 h-4 bg-orange-500 inline-block rounded"></span> Special Holiday
   </span> */}
   <span className="flex items-center gap-2">
-    <span className="w-4 h-4 bg-blue-500 inline-block rounded"></span> DA Program/Eventdsf
+    <span className="w-4 h-4 bg-blue-500 inline-block rounded"></span> DA Program/Event
   </span>
   <span className="flex items-center gap-2">
     <span className="w-4 h-4 bg-green-500 inline-block rounded"></span> My Schedule

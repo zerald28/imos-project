@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
+import axios from 'axios'; // Add this import
 import {
   Select,
   SelectTrigger,
@@ -29,7 +30,11 @@ import {
   FileText,
   Grid3x3,
   Plus,
-  Layers
+  Layers,
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
+  PhilippinePeso
 } from "lucide-react";
 import AppLayout from "@/layouts/marketplaceLayout";
 import { Card } from "@/components/ui/card";
@@ -56,6 +61,9 @@ interface Props {
 const CreateListing: React.FC<Props> = ({ availableSwine = [], selectedSwineIds = [] }) => {
   const [selectedCount, setSelectedCount] = useState(selectedSwineIds.length);
   const [activeTab, setActiveTab] = useState<'details' | 'swine'>('details');
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+   const [averageExpensePerHead, setAverageExpensePerHead] = useState(0);
 
  const { auth, authUser } = usePage().props as any;
 const userRole = auth?.role || authUser?.role;
@@ -73,17 +81,235 @@ const isFarmer = userRole === "farmer";
     swine_ids: selectedSwineIds,
   });
 
+   // Calculate profitability metrics
+  // Calculate profitability metrics
+const calculateProfitability = () => {
+  if (selectedCount === 0 || totalExpenses === 0) return null;
+  
+  const averageExpense = totalExpenses / selectedCount;
+  const currentPrice = parseFloat(data.price_per_unit);
+  
+  if (isNaN(currentPrice) || currentPrice === 0) return null;
+  
+  if (data.price_unit_type === "per_head") {
+    const profitPerHead = currentPrice - averageExpense;
+    const totalProfit = profitPerHead * selectedCount;
+    const profitMargin = (profitPerHead / currentPrice) * 100;
+    
+    return {
+      averageExpense,
+      currentPrice,
+      profitPerHead: profitPerHead, // ✅ Defined for per_head
+      totalProfit: totalProfit, // ✅ Defined for per_head
+      profitMargin,
+      isProfitable: profitPerHead > 0,
+      isBreakEven: Math.abs(profitPerHead) < 0.01,
+      suggestedMinPrice: averageExpense,
+      suggestedGoodPrice: averageExpense * 1.2,
+      suggestedIdealPrice: averageExpense * 1.3,
+    };
+  } else if (data.price_unit_type === "per_kg") {
+    // For per kg, we need average weight of selected swine
+    const selectedSwineData = availableSwine.filter(s => data.swine_ids.includes(s.id));
+    const totalWeight = selectedSwineData.reduce((sum, swine) => sum + (swine.weight || 0), 0);
+    
+    if (totalWeight === 0) return null; // Prevent division by zero
+    
+    const averageWeight = totalWeight / selectedCount;
+    const totalValueAtPrice = currentPrice * totalWeight;
+    const profitMargin = ((totalValueAtPrice - totalExpenses) / totalExpenses) * 100;
+    const totalProfit = totalValueAtPrice - totalExpenses;
+    
+    return {
+      averageExpense,
+      currentPrice,
+      averageWeight,
+      totalValue: totalValueAtPrice,
+      totalProfit: totalProfit, // ✅ Defined for per_kg
+      profitMargin,
+      isProfitable: totalValueAtPrice > totalExpenses,
+      isBreakEven: Math.abs(totalValueAtPrice - totalExpenses) < 0.01,
+      suggestedMinPrice: totalExpenses > 0 ? totalExpenses / totalWeight : 0,
+      suggestedGoodPrice: totalExpenses > 0 ? (totalExpenses * 1.2) / totalWeight : 0,
+      suggestedIdealPrice: totalExpenses > 0 ? (totalExpenses * 1.3) / totalWeight : 0,
+      // Note: profitPerHead is NOT defined for per_kg mode
+    };
+  }
+  
+  return null;
+};
+
+
+// Add this new function after calculateProfitability
+// Update calculatePerKgProfitability to ensure all values are numbers
+// Calculate per kg profitability - based on target weight only
+const calculatePerKgProfitability = () => {
+  if (selectedCount === 0 || totalExpenses === 0) return null;
+  
+  const currentPrice = parseFloat(data.price_per_unit);
+  if (isNaN(currentPrice) || currentPrice === 0) return null;
+  
+  // Calculate minimum total weight needed to break even
+  // Formula: totalExpenses / price_per_kg = minimum total kg needed
+  const minTotalWeightNeeded = totalExpenses / currentPrice;
+  const minAvgWeightPerSwine = minTotalWeightNeeded / selectedCount;
+  
+  // Calculate potential profit at target weight
+  const potentialRevenueAtTarget = currentPrice * minTotalWeightNeeded;
+  const potentialProfit = potentialRevenueAtTarget - totalExpenses;
+  
+  return {
+    currentPrice,
+    totalExpenses,
+    selectedCount,
+    minTotalWeightNeeded,
+    minAvgWeightPerSwine,
+    potentialRevenue: potentialRevenueAtTarget,
+    potentialProfit,
+    isProfitable: true, // At target weight it's break-even, above is profitable
+    suggestedPricePerKg: currentPrice,
+  };
+};
+
+
+  const profitability = calculateProfitability();
+
+  // Get color and message for price input based on profitability
+ // Get color and message for price input based on profitability
+// Update getPriceInputStyle to handle per_kg and per_head separately
+// Update getPriceInputStyle to handle per_kg with target weight
+const getPriceInputStyle = () => {
+  // Handle per_kg pricing separately
+  if (data.price_unit_type === "per_kg") {
+    if (!data.price_per_unit || selectedCount === 0 || totalExpenses === 0) {
+      return { className: "", message: null, color: "gray" };
+    }
+    
+    const perKgData = calculatePerKgProfitability();
+    if (!perKgData) {
+      return { className: "", message: null, color: "gray" };
+    }
+    
+    const formatNumber = (value: any, decimals: number = 1): string => {
+      const num = typeof value === 'number' ? value : parseFloat(value) || 0;
+      return num.toFixed(decimals);
+    };
+    
+    const formatCurrency = (value: any): string => {
+      const num = typeof value === 'number' ? value : parseFloat(value) || 0;
+      return `₱${num.toLocaleString()}`;
+    };
+    
+    // Always show the target weight message for per_kg
+    return {
+      className: "border-blue-500 focus:border-blue-500 focus:ring-blue-500/20 bg-blue-50 dark:bg-blue-900/10",
+      message: {
+        type: "info",
+        title: "📊 Target Weight for Profitability",
+        description: `At ${formatCurrency(perKgData.currentPrice)}/kg, your selected swine need to weigh at least ${formatNumber(perKgData.minTotalWeightNeeded)} kg total to cover your expenses of ${formatCurrency(perKgData.totalExpenses)}.`,
+        suggestion: `Each swine should average ${formatNumber(perKgData.minAvgWeightPerSwine)} kg or more.`,
+        targetWeight: perKgData.minTotalWeightNeeded,
+        avgTargetWeight: perKgData.minAvgWeightPerSwine,
+      },
+      color: "blue"
+    };
+  }
+  
+  // Handle per_head pricing (keep existing logic)
+  if (!profitability || !data.price_per_unit) {
+    return { className: "", message: null, color: "gray" };
+  }
+  
+  if (!profitability.isProfitable && !profitability.isBreakEven) {
+    return {
+      className: "border-red-500 focus:border-red-500 focus:ring-red-500/20 bg-red-50 dark:bg-red-900/10",
+      message: {
+        type: "loss",
+        title: "⚠️ Price Below Break-even Point",
+        description: `Your price of ₱${profitability.currentPrice.toLocaleString()} is ₱${(profitability.averageExpense - profitability.currentPrice).toLocaleString()} below the average expense of ₱${profitability.averageExpense.toLocaleString()} per head. You'll lose money on this sale.`,
+        suggestedPrice: profitability.suggestedMinPrice,
+      },
+      color: "red"
+    };
+  } else if (profitability.isBreakEven) {
+    return {
+      className: "border-yellow-500 focus:border-yellow-500 focus:ring-yellow-500/20 bg-yellow-50 dark:bg-yellow-900/10",
+      message: {
+        type: "break-even",
+        title: "💰 Break-even Point",
+        description: `Your price exactly covers the average expense of ₱${profitability.averageExpense.toLocaleString()} per head. Consider adding a small markup for profit.`,
+        suggestedPrice: profitability.suggestedGoodPrice,
+      },
+      color: "yellow"
+    };
+  } else if (profitability.profitMargin < 10) {
+    return {
+      className: "border-yellow-500 focus:border-yellow-500 focus:ring-yellow-500/20 bg-yellow-50 dark:bg-yellow-900/10",
+      message: {
+        type: "low-profit",
+        title: "📈 Low Profit Margin",
+        description: `Your profit margin is only ${profitability.profitMargin.toFixed(1)}% (₱${profitability.profitPerHead?.toLocaleString()} per head). Consider increasing price for better returns.`,
+        suggestedPrice: profitability.suggestedGoodPrice,
+      },
+      color: "yellow"
+    };
+  } else {
+    return {
+      className: "border-green-500 focus:border-green-500 focus:ring-green-500/20 bg-green-50 dark:bg-green-900/10",
+      message: {
+        type: "profitable",
+        title: "✅ Profitable Listing!",
+        description: `Great! You'll earn ₱${profitability.profitPerHead?.toLocaleString()} profit per head (${profitability.profitMargin.toFixed(1)}% margin). Total profit: ₱${profitability.totalProfit?.toLocaleString()}`,
+      },
+      color: "green"
+    };
+  }
+};
+
+
+
+  
+  const priceInputStyle = getPriceInputStyle();
+
+  
+   const fetchTotalExpenses = async (swineIds: number[]) => {
+    if (swineIds.length === 0) {
+      setTotalExpenses(0);
+      setAverageExpensePerHead(0);
+      return;
+    }
+
+    setIsLoadingExpenses(true);
+    try {
+      const response = await axios.get('/marketplace/seller/swine/total-expenses', {
+        params: { swine_ids: swineIds }
+      });
+      setTotalExpenses(response.data.total_expenses);
+      setAverageExpensePerHead(response.data.total_expenses / swineIds.length);
+    } catch (error) {
+      console.error('Failed to fetch total expenses:', error);
+      setTotalExpenses(0);
+      setAverageExpensePerHead(0);
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  };
+
+
+ 
   const toggleSwine = (id: number) => {
     const newSelected = data.swine_ids.includes(id)
       ? data.swine_ids.filter((s) => s !== id)
       : [...data.swine_ids, id];
     setData("swine_ids", newSelected);
     setSelectedCount(newSelected.length);
+    fetchTotalExpenses(newSelected); // Fetch expenses for updated selection
   };
 
   const handleUncheckAll = () => {
     setData("swine_ids", []);
     setSelectedCount(0);
+    setTotalExpenses(0); // Reset expenses
   };
 
   const submit = (e: React.FormEvent) => {
@@ -161,6 +387,7 @@ const isFarmer = userRole === "farmer";
         .filter((id) => availableIds.includes(id));
       setData("swine_ids", numericIds);
       setSelectedCount(numericIds.length);
+      fetchTotalExpenses(numericIds); // Fetch expenses for initial selection
     }
   }, [selectedSwineIds, availableSwine]);
 
@@ -415,11 +642,37 @@ const isFarmer = userRole === "farmer";
             placeholder="0.00"
             value={data.price_per_unit}
             onChange={(e) => setData("price_per_unit", e.target.value)}
-            className="pl-8 sm:pl-30 bg-white dark:bg-gray-800 border-gray-300 
-                      dark:border-gray-700 focus:border-green-500
-                      text-sm h-11 sm:h-12 w-full"
+            className={`pl-8 sm:pl-30 bg-white dark:bg-gray-800 
+                      ${priceInputStyle.className}
+                      text-sm h-11 sm:h-12 w-full transition-all duration-300`}
           />
         </div>
+        
+       
+        
+        {/* Show average expense even when no price is set */}
+       {/* Show expense info when no price is set */}
+{selectedCount > 0 && totalExpenses > 0 && !data.price_per_unit && (
+  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <p className="text-xs text-blue-700 dark:text-blue-300">
+      <PhilippinePeso className="w-3 h-3 inline mr-1" />
+      {data.price_unit_type === "per_head" ? (
+        <>Average expense per head: ₱{averageExpensePerHead.toLocaleString()}</>
+      ) : (
+        <>
+          <span className="font-medium">Total expenses: ₱{totalExpenses.toLocaleString()}</span> for {selectedCount} swine
+          <br />
+          <span className="text-xs text-gray-500">Enter a price per kg to see the minimum weight needed for profitability</span>
+          <br />
+          <span className="text-xs text-gray-500 mt-1 block">
+            Formula: Total expenses ÷ Price per kg = Minimum kg needed
+          </span>
+        </>
+      )}
+    </p>
+  </div>
+)}
+        
         {errors.price_per_unit && (
           <div className="text-xs text-red-600 dark:text-red-400 mt-1">
             {errors.price_per_unit}
@@ -450,6 +703,120 @@ const isFarmer = userRole === "farmer";
         </Select>
       </div>
     </div>
+  </div>
+
+  <div>
+     {/* Profitability Message */}
+        {/* Profitability Message */}
+{/* Profitability Message */}
+{/* Profitability Message */}
+{data.price_per_unit && selectedCount > 0 && totalExpenses > 0 && (
+  <div className={`mt-2 p-3 rounded-lg border ${
+    priceInputStyle.color === 'red' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
+    priceInputStyle.color === 'yellow' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' :
+    priceInputStyle.color === 'green' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+    priceInputStyle.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' :
+    'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+  }`}>
+    <div className="flex items-start gap-2">
+      {priceInputStyle.color === 'red' && <TrendingDown className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />}
+      {priceInputStyle.color === 'yellow' && <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />}
+      {priceInputStyle.color === 'green' && <TrendingUp className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />}
+      {priceInputStyle.color === 'blue' && <Scale className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />}
+      
+      <div className="flex-1">
+        <p className={`text-sm font-semibold ${
+          priceInputStyle.color === 'red' ? 'text-red-700 dark:text-red-300' :
+          priceInputStyle.color === 'yellow' ? 'text-yellow-700 dark:text-yellow-300' :
+          priceInputStyle.color === 'green' ? 'text-green-700 dark:text-green-300' :
+          priceInputStyle.color === 'blue' ? 'text-blue-700 dark:text-blue-300' :
+          'text-gray-700 dark:text-gray-300'
+        }`}>
+          {priceInputStyle.message?.title}
+        </p>
+        <p className="text-xs mt-1 text-gray-600 dark:text-gray-400">
+          {priceInputStyle.message?.description}
+        </p>
+        
+        {/* Show suggestion/target weight info */}
+        {priceInputStyle.message?.suggestion && (
+          <p className="text-xs mt-1 text-blue-600 dark:text-blue-400 font-medium">
+            💡 {priceInputStyle.message.suggestion}
+          </p>
+        )}
+        
+        {/* Show additional target weight details for per_kg */}
+        {data.price_unit_type === "per_kg" && priceInputStyle.message?.targetWeight && (
+          <div className="mt-2 p-2 bg-white dark:bg-gray-800 rounded-md">
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              📌 To achieve profitability:
+            </p>
+            <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-gray-500">Minimum total weight:</span>
+                <p className="font-bold text-blue-600 dark:text-blue-400">
+                  {(priceInputStyle.message.targetWeight as number).toFixed(1)} kg
+                </p>
+              </div>
+              <div>
+                <span className="text-gray-500">Minimum per swine:</span>
+                <p className="font-bold text-blue-600 dark:text-blue-400">
+                  {(priceInputStyle.message.avgTargetWeight as number).toFixed(1)} kg each
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Suggested Price Buttons for per_head */}
+        {data.price_unit_type === "per_head" && priceInputStyle.message?.suggestedPrice !== undefined && (
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500">Suggested price:</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setData("price_per_unit", priceInputStyle.message!.suggestedPrice!.toString())}
+              className="text-xs h-7 px-2 bg-white dark:bg-gray-800 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
+            >
+              ₱{priceInputStyle.message.suggestedPrice.toLocaleString()}/head
+            </Button>
+            
+            {profitability?.suggestedGoodPrice !== undefined && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setData("price_per_unit", profitability.suggestedGoodPrice!.toString())}
+                className="text-xs h-7 px-2 bg-white dark:bg-gray-800 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
+              >
+                Good: ₱{profitability.suggestedGoodPrice.toLocaleString()}/head
+              </Button>
+            )}
+          </div>
+        )}
+        
+        {/* Additional metrics for per_head */}
+        {data.price_unit_type === "per_head" && profitability && (
+          <div className="mt-2 flex gap-3 text-xs flex-wrap">
+            <span className="text-gray-500">Avg expense/head:</span>
+            <span className="font-medium text-red-600 dark:text-red-400">
+              ₱{averageExpensePerHead.toLocaleString()}
+            </span>
+            <span className="text-gray-500">| Profit/head:</span>
+            <span className={`font-medium ${(profitability.profitPerHead || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {(profitability.profitPerHead || 0) > 0 ? '+' : ''}₱{(profitability.profitPerHead || 0).toLocaleString()}
+            </span>
+            <span className="text-gray-500">| Margin:</span>
+            <span className={`font-medium ${(profitability.profitMargin || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {(profitability.profitMargin || 0).toFixed(1)}%
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
   </div>
 
   {/* Description */}
@@ -638,7 +1005,7 @@ const isFarmer = userRole === "farmer";
     ) : (
       <>
         <Rocket className="mr-2 sm:mr-3 w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="text-sm sm:text-base">Launch Listing</span>
+        <span className="text-sm sm:text-base">Submit Listing</span>
       </>
     )}
   </Button>
@@ -801,23 +1168,55 @@ const isFarmer = userRole === "farmer";
                   </div>
 
                   {selectedCount > 0 && (
-                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Total Selected</span>
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">
-                          {selectedCount}
-                        </span>
-                      </div>
-                      {data.price_per_unit && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Estimated Value</span>
-                          <span className="text-xl font-bold text-green-700 dark:text-green-400">
-                            ₱{(parseFloat(data.price_per_unit) * selectedCount).toLocaleString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {/* Selected Count */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Selected</span>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    {selectedCount}
+                  </span>
+                </div>
+
+                {/* Total Expenses - NEW SECTION */}
+                <div className="flex items-center justify-between mb-2 py-2 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Total Expenses</span>
+                    {isLoadingExpenses && (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-600"></div>
+                    )}
+                  </div>
+                  <span className="text-base font-semibold text-red-600 dark:text-red-400">
+                    ₱{totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                
+
+                {/* Estimated Value */}
+                {data.price_per_unit && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Estimated Value</span>
+                    <span className="text-xl font-bold text-green-700 dark:text-green-400">
+                      ₱{(parseFloat(data.price_per_unit) * selectedCount).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Net Value (Estimated Value - Total Expenses) - OPTIONAL */}
+                {data.price_per_unit && totalExpenses > 0 && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Net Value
+                    </span>
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      ₱{((parseFloat(data.price_per_unit) * selectedCount) - totalExpenses).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+                  
 
                   {/* Mobile Navigation Button */}
                   <div className="lg:hidden mt-6">

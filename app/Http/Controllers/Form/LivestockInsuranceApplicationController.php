@@ -39,10 +39,12 @@ class LivestockInsuranceApplicationController extends Controller
             ($farmer->userInformation->middlename ?? '') . ' ' .
             ($farmer->userInformation->lastname ?? '')
         ),
-        'address' => optional($farmer->userInformation->province)->name . ', ' .
-                     optional($farmer->userInformation->municipal)->name . ', ' .
-                     optional($farmer->userInformation->barangay)->name . ', ' .
-                     ($farmer->userInformation->purok ?? ''),
+     'address' => trim(
+    (optional(optional($farmer->userInformation)->province)->name ?? '') . ', ' .
+    (optional(optional($farmer->userInformation)->municipal)->name ?? '') . ', ' .
+    (optional(optional($farmer->userInformation)->barangay)->name ?? '') . ', ' .
+    ($farmer->userInformation->purok ?? '')
+),
 
         'contact' => $farmer->userInformation->contact ?? '',
 

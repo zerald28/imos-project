@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 import CalendarView from "@/components/calendar/calendarview";
 import { useRef, useEffect, useMemo } from "react";
+import { Settings } from 'lucide-react';
 const sidebarNavItems: NavItem[] = [
   { title: 'List', href: '/swine', icon: null },
   { title: 'Add Swine', href: '/swine/create', icon: null },
@@ -80,26 +81,37 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
           ))}
         </nav> */}
           <>
-        <ScrollArea className="flex-1 p-0 md:pt-0 pl-1 pr-1 pt-0 pb-0 hidden lg:block ">
-      <div className="p-0 sm:p-0  ">
-       
+       <ScrollArea className="flex-1 p-0 md:pt-0 pl-1 pr-1 pt-0 pb-0 hidden lg:block">
+  <div className="p-0 sm:p-0">
+    {/* Swine Management Button inside sidebar */}
 
-        {/* Calendar component */}
-        <CalendarView events={memoizedEvents} schedules={memoizedSchedules} />
-         {/* Legend */}
-      <div className="mt-3 grid grid-cols-2 ml-2 sm:flex sm:flex-wrap gap-4 text-sm">
-        {/* <span className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-red-500 rounded" /> Holiday
-        </span> */}
-        <span className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-blue-500 rounded" /> DA Program/Event
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="w-4 h-4 bg-green-500 rounded" /> My Schedule
-        </span>
-      </div>
-      </div>
-      </ScrollArea>
+    
+    {/* Calendar component */}
+    <CalendarView events={memoizedEvents} schedules={memoizedSchedules} />
+    {/* Legend */}
+    <div className="mt-3 grid grid-cols-2 ml-2 sm:flex sm:flex-wrap gap-4 text-sm">
+      <span className="flex items-center gap-2">
+        <span className="w-4 h-4 bg-blue-500 rounded" /> DA Program/Event
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="w-4 h-4 bg-green-500 rounded" /> My Schedule
+      </span>
+    </div>
+
+        <div className="p-2 pt-10 mb-2">
+      <Link href="/swine-management/schedules" prefetch preserveScroll>
+        <Button 
+          variant="outline"
+          className="w-full border-green-600 text-green-600 hover:bg-green-600 hover:text-white transition-all duration-200"
+          size="sm"
+        >
+          {/* <Settings className="h-3 w-3 mr-2" /> */}
+          Go to Schedule
+        </Button>
+      </Link>
+    </div>
+  </div>
+</ScrollArea>
     </>
       </aside>
 

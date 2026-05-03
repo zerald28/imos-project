@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
-import { Bell, Check, MessageSquare, User, StoreIcon, Syringe, HandCoins } from 'lucide-react';
+import { Bell, Check, MessageSquare, User, StoreIcon, Syringe, HandCoins, CircleDot } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
@@ -287,8 +287,8 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 <div
                   key={n.id}
                   className={cn(
-                    "px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex justify-between items-start border-b dark:border-gray-800 last:border-b-0",
-                    !n.is_read && "bg-gray-50 dark:bg-gray-800/50 font-semibold"
+                    "px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer flex justify-between items-start border-b dark:border-gray-800 last:border-b-0",
+                    !n.is_read && "bg-gray-200 dark:bg-gray-800/50 font-semibold"
                   )}
                   onClick={() => {
                     if (!n.is_read) {
@@ -318,7 +318,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                       </span>
                     </div>
 
-                    {!n.is_read && <Check className="h-4 w-4 text-green-500 dark:text-green-400 flex-shrink-0 mt-1" />}
+                    {!n.is_read && <CircleDot className="h-4 w-4 text-green-300 fill-green-300" />}
                   </div>
                 </div>
               ))

@@ -167,20 +167,54 @@ const SignatureEditor: React.FC<SignatureEditorProps> = ({
         {/* Save Button */}
         <div className="absolute bottom-4 right-4 flex gap-2">
           {/* Save */}
-          <button
-            className="px-4 py-2 bg-sidebar-primary hover:bg-green-300 text-white rounded flex items-center gap-2"
-            onClick={() => {
-              const realX = (pos.x - pdfOffset.left) * pdfOffset.scale;
-              const realY = (pos.y - pdfOffset.top) * pdfOffset.scale;
-              const realWidth = size.width * pdfOffset.scale;
-              const realHeight = size.height * pdfOffset.scale;
+           <button
+    className="px-4 py-2 bg-sidebar-primary hover:bg-sidebar-primary/90 text-white rounded flex items-center gap-2"
+    onClick={async () => {
+      const realX = (pos.x - pdfOffset.left) * pdfOffset.scale;
+      const realY = (pos.y - pdfOffset.top) * pdfOffset.scale;
+      const realWidth = size.width * pdfOffset.scale;
+      const realHeight = size.height * pdfOffset.scale;
 
-              onSave(realX, realY, realWidth, realHeight);
-            }}
-          >
-            <Printer size={18} />
-            <span>Print</span>
-          </button>
+      try {
+        // First save the signature position
+        await axios.post(`/insurance/signature/${pdfId}/save`, { 
+          x: realX, 
+          y: realY, 
+          width: realWidth, 
+          height: realHeight 
+        });
+        
+        // Then fetch the PDF as blob and print it
+        const response = await axios.get(`/insurance/${pdfId}/pdf/download`, {
+          responseType: 'blob'
+        });
+        
+        // Create blob URL
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        
+        // Open in new window and trigger print
+        const printWindow = window.open(url, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+            // Optional: Close after print or keep open
+            // printWindow.onafterprint = () => printWindow.close();
+          };
+        }
+        
+        // Call onSave callback if needed
+        onSave(realX, realY, realWidth, realHeight);
+        
+      } catch (error) {
+        console.error("Failed to save or print:", error);
+        alert("Failed to save signature or print document");
+      }
+    }}
+  >
+    <Printer size={18} />
+    <span>Save & Print</span>
+  </button>
           
           {/* Save Only Button */}
           <button

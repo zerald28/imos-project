@@ -58,30 +58,33 @@ public function setup($id)
         ->toArray();
 
     // Get ALL swine from the listing with their status
-    $allSwineList = $transaction->listing->listingSwine->map(function ($swine) use ($transactionSwineIds, $finalAmountMap) {
-        $birthDate = $swine->birthdate ? \Carbon\Carbon::parse($swine->birthdate) : null;
-        $ageDays = $birthDate ? intval($birthDate->diffInDays(now())) : 'N/A';
+    // In your controller's setup method, update the allSwineList mapping:
 
-        $weight = $swine->scaled_weight ?? $swine->estimated_weight ?? 'N/A';
+$allSwineList = $transaction->listing->listingSwine->map(function ($swine) use ($transactionSwineIds, $finalAmountMap) {
+    $birthDate = $swine->birthdate ? \Carbon\Carbon::parse($swine->birthdate) : null;
+    $ageDays = $birthDate ? intval($birthDate->diffInDays(now())) : 'N/A';
 
-        $status = $swine->status ?? 'unknown';
-        $statusDisplay = ucfirst(str_replace('_', ' ', $status));
-        
-        // Check if this swine is in the current transaction
-        $isInTransaction = in_array($swine->id, $transactionSwineIds);
+    $weight = $swine->scaled_weight ?? $swine->estimated_weight ?? 'N/A';
 
-        return [
-            'listing_swine_id' => $swine->id,
-            'sex' => ucfirst($swine->sex ?? 'N/A'),
-            'breed' => $swine->breed ?? 'N/A',
-            'age_days' => is_numeric($ageDays) ? "{$ageDays} days" : 'N/A',
-            'weight' => $weight,
-            'status' => $status,
-            'status_display' => $statusDisplay,
-            'is_in_transaction' => $isInTransaction,
-            'final_amount' => $isInTransaction ? ($finalAmountMap[$swine->id] ?? null) : null,
-        ];
-    })->values();
+    $status = $swine->status ?? 'unknown';
+    $statusDisplay = ucfirst(str_replace('_', ' ', $status));
+    
+    // Check if this swine is in the current transaction
+    $isInTransaction = in_array($swine->id, $transactionSwineIds);
+
+    return [
+        'listing_swine_id' => $swine->id,
+        'swine_id' => $swine->swine_id, // ✅ Add this line - the actual swine ID from the swine table
+        'sex' => ucfirst($swine->sex ?? 'N/A'),
+        'breed' => $swine->breed ?? 'N/A',
+        'age_days' => is_numeric($ageDays) ? "{$ageDays} days" : 'N/A',
+        'weight' => $weight,
+        'status' => $status,
+        'status_display' => $statusDisplay,
+        'is_in_transaction' => $isInTransaction,
+        'final_amount' => $isInTransaction ? ($finalAmountMap[$swine->id] ?? null) : null,
+    ];
+})->values();
 
     // Calculate totals from transaction swine
     $transactionSwine = $allSwineList->filter(function($item) {
@@ -336,4 +339,54 @@ public function activityLog(Request $request)
     ]);
 }
 
+
+public function getTransactionSwineTotalExpenses(Request $request, $transactionId)
+{
+    $transaction = MarketplaceTransaction::findOrFail($transactionId);
+    
+    // Get all listing_swine IDs from this transaction through swineRequest
+    $listingSwineIds = $transaction->swineRequest()
+        ->pluck('listing_swine_id')
+        ->toArray();
+    
+    \Log::info('Listing Swine IDs:', $listingSwineIds); // Debug log
+    
+    if (empty($listingSwineIds)) {
+        return response()->json([
+            'total_expenses' => 0,
+            'formatted' => '₱0.00',
+            'swine_count' => 0,
+            'average_per_swine' => 0
+        ]);
+    }
+    
+    // Get the actual swine IDs from listing_swine table
+    $swineIds = \App\Models\Marketplace\ListingSwine::whereIn('id', $listingSwineIds)
+        ->pluck('swine_id')
+        ->toArray();
+    
+    \Log::info('Swine IDs from listing_swine:', $swineIds); // Debug log
+    
+    if (empty($swineIds)) {
+        return response()->json([
+            'total_expenses' => 0,
+            'formatted' => '₱0.00',
+            'swine_count' => 0,
+            'average_per_swine' => 0
+        ]);
+    }
+    
+    // Calculate total expenses from SwineExpenses table using swine_id
+    $totalExpenses = \App\Models\SwineExpense::whereIn('swine_id', $swineIds)
+        ->sum('individual_share');
+    
+    \Log::info('Total Expenses:', ['total' => $totalExpenses]); // Debug log
+    
+    return response()->json([
+        'total_expenses' => $totalExpenses,
+        'formatted' => '₱' . number_format($totalExpenses, 2),
+        'swine_count' => count($swineIds),
+        'average_per_swine' => count($swineIds) > 0 ? $totalExpenses / count($swineIds) : 0
+    ]);
+}
 }

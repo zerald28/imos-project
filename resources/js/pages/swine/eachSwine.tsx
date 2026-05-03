@@ -143,6 +143,15 @@ const EachSwine: React.FC<Props> = ({ swine, enums, breeds }) => {
 
   const age = swine.birthdate ? calculateAge(swine.birthdate) : null;
 
+ const calculateAges = (birthdate: string) => {
+  const birthDate = new Date(birthdate);
+  const today = new Date();
+  const diffTime = today.getTime() - birthDate.getTime();
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+};
+
+const ages = swine.birthdate ? calculateAges(swine.birthdate) : null;
+
   return (
     <>
     <AppLayout>
@@ -375,7 +384,8 @@ const EachSwine: React.FC<Props> = ({ swine, enums, breeds }) => {
                 <div>
                   <p className="text-gray-500 dark:text-gray-400 text-xs">Age</p>
                   <p className="font-medium">
-                    {age ? `${age.years}y ${age.months}m` : '-'}
+                    {age ? `${age.years}y ${age.months}m ` : '-'}
+                    -  {ages ? `${ages} ${ages === 1 ? 'day' : 'days'}` : '-'}
                   </p>
                 </div>
                 <div>

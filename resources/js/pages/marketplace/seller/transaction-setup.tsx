@@ -25,7 +25,11 @@ import {
   Badge,
   FileText,
   Save,
-  Star
+  Star,
+  Scale,
+  TrendingDown,
+  TrendingUp,
+  PhilippinePeso
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
@@ -71,6 +75,14 @@ type SwineItem = {
   is_in_transaction: boolean;
   final_amount?: number | null;
 };
+
+// Add interface for expenses data
+interface TransactionExpenses {
+  total_expenses: number;
+  formatted: string;
+  swine_count: number;
+  average_per_swine: number;
+}
 
 type Props = {
   transaction: Transaction;
@@ -279,26 +291,26 @@ const TransactionSetup: React.FC<Props> = ({
     }
   };
 
-  const handleUpdatePrice = async () => {
-    if (editedPricePerUnit <= 0) {
-      toast.error("Price must be greater than 0");
-      return;
-    }
+  // const handleUpdatePrice = async () => {
+  //   if (editedPricePerUnit <= 0) {
+  //     toast.error("Price must be greater than 0");
+  //     return;
+  //   }
 
-    try {
-      await axios.post(route("marketplace.transaction.updatePrice", transaction.id), {
-        price_per_unit: editedPricePerUnit,
-        price_unit_type: editedPriceUnitType,
-      });
+  //   try {
+  //     await axios.post(route("marketplace.transaction.updatePrice", transaction.id), {
+  //       price_per_unit: editedPricePerUnit,
+  //       price_unit_type: editedPriceUnitType,
+  //     });
 
-      toast.success("Price updated successfully");
-      router.reload({ only: ['transaction'] });
-      setShowPriceModal(false);
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Failed to update price");
-    }
-  };
+  //     toast.success("Price updated successfully");
+  //     router.reload({ only: ['transaction'] });
+  //     setShowPriceModal(false);
+  //   } catch (error: any) {
+  //     console.error(error);
+  //     toast.error(error.response?.data?.message || "Failed to update price");
+  //   }
+  // };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -409,7 +421,81 @@ const TransactionSetup: React.FC<Props> = ({
   };
 
   const currentStageIndex = getStageIndex(transaction.status);
-  const stages = ["Pending", "Approved", "Confirmed", "Finalized"];
+  const stages = ["Pending", "Approved", "Completed"];
+
+
+
+   // Add state for expenses
+  const [transactionExpenses, setTransactionExpenses] = useState<TransactionExpenses | null>(null);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+  const [showExpensesDetail, setShowExpensesDetail] = useState(false);
+
+
+   // Fetch total expenses for the transaction
+  const fetchTransactionExpenses = async () => {
+    setIsLoadingExpenses(true);
+    try {
+      const response = await axios.get(route("marketplace.seller.totalExpenses", transaction.id));
+      setTransactionExpenses(response.data);
+    } catch (error) {
+      console.error('Failed to fetch transaction expenses:', error);
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  };
+
+  // Fetch expenses when component mounts
+  useEffect(() => {
+    fetchTransactionExpenses();
+  }, [transaction.id]);
+
+  // ... (keep all existing functions)
+
+  // Update the handleUpdatePrice function to show profitability analysis
+  const handleUpdatePrice = async () => {
+    if (editedPricePerUnit <= 0) {
+      toast.error("Price must be greater than 0");
+      return;
+    }
+
+    // Calculate profitability if expenses data is available
+    if (transactionExpenses && transactionExpenses.total_expenses > 0) {
+      let isProfitable = false;
+      let profitMessage = "";
+      
+      if (editedPriceUnitType === "per_head") {
+        const totalRevenue = editedPricePerUnit * validTransactionSwine.length;
+        const profit = totalRevenue - transactionExpenses.total_expenses;
+        isProfitable = profit > 0;
+        profitMessage = isProfitable 
+          ? `You'll earn ₱${profit.toLocaleString()} total profit (${((profit / transactionExpenses.total_expenses) * 100).toFixed(1)}% margin)`
+          : `You'll lose ₱${Math.abs(profit).toLocaleString()} (${((Math.abs(profit) / transactionExpenses.total_expenses) * 100).toFixed(1)}% loss)`;
+      } else {
+        // For per_kg, calculate target weight needed
+        const minWeightNeeded = transactionExpenses.total_expenses / editedPricePerUnit;
+        const avgWeightNeeded = minWeightNeeded / validTransactionSwine.length;
+        profitMessage = `Need at least ${minWeightNeeded.toFixed(1)} kg total (${avgWeightNeeded.toFixed(1)} kg per swine) to break even`;
+      }
+      
+      if (!confirm(`Update price to ₱${editedPricePerUnit.toLocaleString()}/${editedPriceUnitType}?\n\n${profitMessage}\n\nDo you want to continue?`)) {
+        return;
+      }
+    }
+
+    try {
+      await axios.post(route("marketplace.transaction.updatePrice", transaction.id), {
+        price_per_unit: editedPricePerUnit,
+        price_unit_type: editedPriceUnitType,
+      });
+
+      toast.success("Price updated successfully");
+      router.reload({ only: ['transaction'] });
+      setShowPriceModal(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to update price");
+    }
+  };
 
   return (
     <AppLayout>
@@ -438,7 +524,7 @@ const TransactionSetup: React.FC<Props> = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 sm:p-6">
             <div>
               <h2 className="text-lg sm:text-xl font-semibold text-chart-5 dark:text-gray-200">
-                Transaction with {transaction.buyer_name}
+                Seller's Transaction with {transaction.buyer_name}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {getStatusMessage(transaction.status)} • Transaction #{transaction.id}
@@ -686,6 +772,13 @@ const TransactionSetup: React.FC<Props> = ({
                     <span className="dark:text-gray-300">
                       <span className="font-semibold text-chart-5 dark:text-gray-200">Address:</span>{" "}
                       {transaction.address}
+                    </span>
+                  </div>
+                   <div className="flex items-start gap-2">
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <span className="dark:text-gray-300">
+                      <span className="font-semibold text-chart-5 dark:text-gray-200">Listing Number:</span>{" "}
+                      {transaction.listing_id}
                     </span>
                   </div>
                 </div>
@@ -1220,122 +1313,281 @@ const TransactionSetup: React.FC<Props> = ({
           </CardContent>
         </Card>
 
-        {/* Price Edit Modal - Dark Mode Support */}
-        {showPriceModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm w-full overflow-hidden">
-              <div className="bg-sidebar-primary text-white px-4 py-3">
-                <h3 className="text-sm sm:text-base font-semibold">Update Price</h3>
-                <p className="text-[10px] sm:text-xs text-green-100 mt-0.5">
-                  Change price and pricing unit
-                </p>
+       {/* Price Edit Modal - Responsive & Wider */}
+{showPriceModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Header */}
+      <div className="bg-sidebar-primary text-white px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-10">
+        <h3 className="text-base sm:text-lg font-semibold">Update Price</h3>
+        <p className="text-xs sm:text-sm text-green-100 mt-0.5">
+          Change price and pricing unit
+        </p>
+      </div>
+
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Current Price */}
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1">Current Price</p>
+          <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+            ₱{transaction.price_per_unit.toLocaleString()}
+            <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">/{transaction.price_unit_type}</span>
+          </p>
+        </div>
+
+        {/* Transaction Expenses Summary */}
+        {transactionExpenses && transactionExpenses.total_expenses > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 sm:p-4 border border-blue-200 dark:border-blue-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <p className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                <PhilippinePeso className="h-3 w-3 sm:h-4 sm:w-4" />
+                Transaction Expenses Summary
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowExpensesDetail(!showExpensesDetail)}
+                className="h-6 sm:h-7 px-2 text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 w-fit"
+              >
+                {showExpensesDetail ? "Hide Details" : "Show Details"}
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="flex justify-between items-center sm:flex-col sm:items-start sm:space-y-1">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Total Expenses:</span>
+                <span className="text-base sm:text-lg font-bold text-red-600 dark:text-red-400">
+                  {transactionExpenses.formatted}
+                </span>
               </div>
-
-              <div className="p-4 space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mb-1">Current Price</p>
-                  <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
-                    ₱{transaction.price_per_unit.toLocaleString()}
-                    <span className="text-[10px] sm:text-xs font-normal text-gray-500 ml-2">/{transaction.price_unit_type}</span>
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    New Price per Unit
-                  </label>
-                  <div className="relative">
-                    <span className="absolute right-5 sm:right-6 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] sm:text-sm">₱</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={editedPricePerUnit}
-                      onChange={(e) => setEditedPricePerUnit(parseFloat(e.target.value) || 0)}
-                      className="w-full pl-6 sm:pl-7 pr-3 py-1.5 text-xs sm:text-sm"
-                      placeholder="Enter price"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Pricing Unit
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditedPriceUnitType('per_head')}
-                      className={`
-                        flex flex-col items-center py-1.5 sm:py-2 px-1 rounded-md border transition-all text-[10px] sm:text-xs
-                        ${editedPriceUnitType === 'per_head' 
-                          ? 'border-sidebar-primary bg-green-50 dark:bg-green-900/20' 
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                        }
-                      `}
-                    >
-                      <span className={`font-medium ${editedPriceUnitType === 'per_head' ? 'text-sidebar-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                        Per Head
-                      </span>
-                      <span className={`text-[8px] sm:text-[9px] mt-0.5 ${editedPriceUnitType === 'per_head' ? 'text-sidebar-primary/70' : 'text-gray-500'}`}>
-                        Fixed per animal
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditedPriceUnitType('per_kg')}
-                      className={`
-                        flex flex-col items-center py-1.5 sm:py-2 px-1 rounded-md border transition-all text-[10px] sm:text-xs
-                        ${editedPriceUnitType === 'per_kg' 
-                          ? 'border-sidebar-primary bg-green-50 dark:bg-green-900/20' 
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                        }
-                      `}
-                    >
-                      <span className={`font-medium ${editedPriceUnitType === 'per_kg' ? 'text-sidebar-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                        Per Kg
-                      </span>
-                      <span className={`text-[8px] sm:text-[9px] mt-0.5 ${editedPriceUnitType === 'per_kg' ? 'text-sidebar-primary/70' : 'text-gray-500'}`}>
-                        Based on weight
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-                  <p className="text-[10px] sm:text-xs text-green-700 dark:text-green-300 font-medium mb-1">Preview</p>
-                  <p className="text-xs sm:text-sm text-sidebar-primary font-medium">
-                    ₱{editedPricePerUnit.toLocaleString()} /{editedPriceUnitType}
-                  </p>
-                  <p className="text-[8px] sm:text-[9px] text-green-600 dark:text-green-400 mt-1">
-                    {editedPriceUnitType === 'per_kg' 
-                      ? 'Total = price × total weight'
-                      : 'Total = sum of final amounts or price × quantity'
-                    }
-                  </p>
-                </div>
+              
+              <div className="flex justify-between items-center sm:flex-col sm:items-start sm:space-y-1">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Swine in Transaction:</span>
+                <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">
+                  {transactionExpenses.swine_count} heads
+                </span>
               </div>
-
-              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPriceModal(false)}
-                  className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs border-gray-300 dark:border-gray-600"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleUpdatePrice}
-                  className="h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs bg-sidebar-primary hover:bg-sidebar-primary/90 text-white"
-                >
-                  Update Price
-                </Button>
+              
+              <div className="flex justify-between items-center sm:flex-col sm:items-start sm:space-y-1">
+                <span className="text-xs text-gray-600 dark:text-gray-400">Average Expense/Swine:</span>
+                <span className="text-sm sm:text-base font-medium text-orange-600 dark:text-orange-400">
+                  ₱{transactionExpenses.average_per_swine.toLocaleString()}
+                </span>
               </div>
             </div>
+
+            {showExpensesDetail && (
+              <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-700 text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <p className="font-medium text-blue-700 dark:text-blue-400">💡 To be profitable:</p>
+                {editedPriceUnitType === "per_head" ? (
+                  <p className="ml-2">• Price must be above <span className="font-semibold">₱{transactionExpenses.average_per_swine.toLocaleString()}/head</span></p>
+                ) : (
+                  <p className="ml-2">• Total weight must exceed <span className="font-semibold">₱{transactionExpenses.total_expenses.toLocaleString()} ÷ price</span></p>
+                )}
+                <p className="text-blue-600 dark:text-blue-400 mt-2 text-[10px] sm:text-xs">
+                  ⚡ This is the total expenses for ALL swine in this transaction
+                </p>
+              </div>
+            )}
           </div>
         )}
+
+        {/* New Price Input */}
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
+            New Price per Unit
+          </label>
+          <div className="relative">
+            <span className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-500 text-sm sm:text-base">₱</span>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={editedPricePerUnit}
+              onChange={(e) => setEditedPricePerUnit(parseFloat(e.target.value) || 0)}
+              className="w-full pl-5 sm:pl-6 pr-8 sm:pr-10 py-2 sm:py-2.5 text-sm sm:text-base"
+              placeholder="Enter price"
+            />
+          </div>
+        </div>
+
+        {/* Pricing Unit Selection */}
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
+            Pricing Unit
+          </label>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => setEditedPriceUnitType('per_head')}
+              className={`
+                flex flex-col items-center py-2 sm:py-3 px-2 rounded-lg border-2 transition-all
+                ${editedPriceUnitType === 'per_head' 
+                  ? 'border-sidebar-primary bg-green-50 dark:bg-green-900/20 shadow-md' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }
+              `}
+            >
+              <span className={`font-semibold text-sm sm:text-base ${editedPriceUnitType === 'per_head' ? 'text-sidebar-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                Per Head
+              </span>
+              <span className={`text-[10px] sm:text-xs mt-1 ${editedPriceUnitType === 'per_head' ? 'text-sidebar-primary/70' : 'text-gray-500'}`}>
+                Fixed price per animal
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditedPriceUnitType('per_kg')}
+              className={`
+                flex flex-col items-center py-2 sm:py-3 px-2 rounded-lg border-2 transition-all
+                ${editedPriceUnitType === 'per_kg' 
+                  ? 'border-sidebar-primary bg-green-50 dark:bg-green-900/20 shadow-md' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }
+              `}
+            >
+              <span className={`font-semibold text-sm sm:text-base ${editedPriceUnitType === 'per_kg' ? 'text-sidebar-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                Per Kg
+              </span>
+              <span className={`text-[10px] sm:text-xs mt-1 ${editedPriceUnitType === 'per_kg' ? 'text-sidebar-primary/70' : 'text-gray-500'}`}>
+                Based on total weight
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Profitability Preview */}
+        {transactionExpenses && transactionExpenses.total_expenses > 0 && editedPricePerUnit > 0 && (
+          <div className={`rounded-lg p-3 sm:p-4 ${
+            editedPriceUnitType === "per_head" 
+              ? (editedPricePerUnit * validTransactionSwine.length) > transactionExpenses.total_expenses
+                ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+              : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+          }`}>
+            <p className="text-xs sm:text-sm font-semibold mb-3 flex items-center gap-2">
+              {editedPriceUnitType === "per_head" 
+                ? (editedPricePerUnit * validTransactionSwine.length) > transactionExpenses.total_expenses
+                  ? <><TrendingUp className="h-4 w-4 text-green-600" /> Profitability Preview</>
+                  : <><TrendingDown className="h-4 w-4 text-red-600" /> Profitability Preview</>
+                : <><Scale className="h-4 w-4 text-blue-600" /> Target Weight Analysis</>
+              }
+            </p>
+            
+            {editedPriceUnitType === "per_head" ? (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Revenue:</span>
+                  <span className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                    ₱{(editedPricePerUnit * validTransactionSwine.length).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Expenses:</span>
+                  <span className="text-sm sm:text-base font-semibold text-red-600 dark:text-red-400">
+                    {transactionExpenses.formatted}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Profit/Loss:</span>
+                  <span className={`text-base sm:text-lg font-bold ${
+                    (editedPricePerUnit * validTransactionSwine.length) > transactionExpenses.total_expenses 
+                      ? "text-green-600" 
+                      : "text-red-600"
+                  }`}>
+                    {((editedPricePerUnit * validTransactionSwine.length) - transactionExpenses.total_expenses) > 0 ? '+' : ''}
+                    ₱{((editedPricePerUnit * validTransactionSwine.length) - transactionExpenses.total_expenses).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Margin:</span>
+                  <span className={`text-sm sm:text-base font-semibold ${
+                    (editedPricePerUnit * validTransactionSwine.length) > transactionExpenses.total_expenses 
+                      ? "text-green-600" 
+                      : "text-red-600"
+                  }`}>
+                    {((((editedPricePerUnit * validTransactionSwine.length) - transactionExpenses.total_expenses) / transactionExpenses.total_expenses) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Min Weight Needed:</span>
+                  <span className="text-sm sm:text-base font-bold text-blue-600 dark:text-blue-400">
+                    {(transactionExpenses.total_expenses / editedPricePerUnit).toFixed(1)} kg
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Per Swine Target:</span>
+                  <span className="text-sm sm:text-base font-semibold text-blue-600 dark:text-blue-400">
+                    {((transactionExpenses.total_expenses / editedPricePerUnit) / validTransactionSwine.length).toFixed(1)} kg each
+                  </span>
+                </div>
+                <div className="mt-2 p-2 bg-white/50 dark:bg-gray-800/50 rounded-md">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between flex-wrap gap-2">
+                    <span>⚡ Current total weight:</span>
+                    <span className={`font-semibold ${validTotalWeight >= (transactionExpenses.total_expenses / editedPricePerUnit) 
+                      ? "text-green-600" 
+                      : "text-red-600"
+                    }`}>
+                      {validTotalWeight.toFixed(1)} kg
+                      {validTotalWeight > 0 && (
+                        <span className="ml-2">
+                          ({validTotalWeight >= (transactionExpenses.total_expenses / editedPricePerUnit) 
+                            ? "✓ Sufficient" 
+                            : "✗ Insufficient"})
+                        </span>
+                      )}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Preview Summary */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-3 sm:p-4 border border-green-200 dark:border-green-800">
+          <p className="text-xs sm:text-sm text-green-700 dark:text-green-300 font-semibold mb-2">Preview Summary</p>
+          <div className="flex justify-between items-center">
+            <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300">New Price:</span>
+            <span className="text-lg sm:text-xl font-bold text-sidebar-primary">
+              ₱{editedPricePerUnit.toLocaleString()}
+              <span className="text-xs sm:text-sm font-normal text-gray-500 ml-1">/{editedPriceUnitType}</span>
+            </span>
+          </div>
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Total will be:</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {editedPriceUnitType === 'per_kg' 
+                ? `₱${editedPricePerUnit.toLocaleString()} × ${validTotalWeight.toFixed(1)} kg = ₱${(editedPricePerUnit * validTotalWeight).toLocaleString()}`
+                : `${validTransactionSwine.length} heads × ₱${editedPricePerUnit.toLocaleString()} = ₱${(editedPricePerUnit * validTransactionSwine.length).toLocaleString()}`
+              }
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Buttons */}
+      <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 sticky bottom-0">
+        <Button
+          variant="outline"
+          onClick={() => setShowPriceModal(false)}
+          className="h-9 sm:h-10 px-3 sm:px-4 text-sm border-gray-300 dark:border-gray-600"
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleUpdatePrice}
+          className="h-9 sm:h-10 px-3 sm:px-4 text-sm bg-sidebar-primary hover:bg-sidebar-primary/90 text-white"
+        >
+          Update Price
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
         
       </div>
     </AppLayout>

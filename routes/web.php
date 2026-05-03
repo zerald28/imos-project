@@ -653,9 +653,15 @@ Route::get('my-swine', [SwineController::class, 'index'])->name('swine-managemen
             ->name('schedules.destroy');
 
         Route::prefix('marketplace/seller')->name('marketplace.seller.')->group(function () {
+
+          Route::get('/{transaction}/totalExpenses', [SellerTransactionController::class, 'getTransactionSwineTotalExpenses'])
+        ->name('totalExpenses'); // This creates 'marketplace.seller.totalExpenses'
             Route::get('/index', [SellerListingController::class, 'index'])->name('index');
 
             Route::post('/', [SellerListingController::class, 'store'])->name('store');
+            Route::get('/swine/total-expenses', [SellerListingController::class, 'getSwineTotalExpenses'])
+    ->middleware(['auth']);
+
 
                   Route::get('/direct-sale', [DirectSaleController::class, 'createDirectSale'])
         ->name('direct-sale.create');

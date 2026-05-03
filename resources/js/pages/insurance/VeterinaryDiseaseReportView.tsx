@@ -94,22 +94,43 @@ const ViewAnimalReport: React.FC<ViewAnimalReportProps> = ({
 }) => {
   const [editingSignature, setEditingSignature] = useState(false);
 
-  const handleSaveSignature = (x: number, y: number, width: number, height: number) => {
-    axios
-      .post(`/insurance/signature/${animal.veterinary_report_id}/saves`, {
-        x,
-        y,
-        width,
-        height,
-        veterinary_disease_report_id: animal.veterinary_report_id,
-      })
-      .then(() => {
-        toast.success("Signature saved!");
-        window.open(`/insurance/${animal.veterinary_report_id}/pdf/downloadreport`, "_blank");
-        setEditingSignature(false);
-      })
-      .catch(() => toast.error("Failed to save signature."));
-  };
+  // In ViewAnimalReport.tsx - Update the handleSaveSignature function
+
+const handleSaveSignature = async (x: number, y: number, width: number, height: number) => {
+  try {
+    // First save the signature
+    await axios.post(`/insurance/signature/${animal.veterinary_report_id}/saves`, {
+      x,
+      y,
+      width,
+      height,
+      veterinary_disease_report_id: animal.veterinary_report_id,
+    });
+    
+    alert("Signature saved successfully! Opening print dialog...");
+    
+    // Then fetch and print the PDF
+    const response = await axios.get(`/insurance/${animal.veterinary_report_id}/pdf/downloadreport`, {
+      responseType: 'blob'
+    });
+    
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+    
+    setEditingSignature(false);
+    
+  } catch (error) {
+    console.error("Failed to save or print:", error);
+    alert("Failed to save signature or print document. Please try again.");
+  }
+};
 
   const handleEditReport = () => {
     if (animal.veterinary_report_id) {
@@ -359,8 +380,8 @@ const ViewAnimalReport: React.FC<ViewAnimalReportProps> = ({
               <div className="relative min-h-[800px] border rounded-lg overflow-hidden shadow-inner dark:border-gray-700 dark:bg-gray-900">
                 <SignatureEditor
                   signaturePath={`/storage/${userSignature}`}
-                  initialX={signature?.x || 80}
-                  initialY={signature?.y || 20}
+                  initialX={ 50}
+                  initialY={20}
                   initialWidth={signature?.width || 301}
                   initialHeight={signature?.height || 120}
                   pdfId={animal.veterinary_report_id}

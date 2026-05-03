@@ -55,27 +55,47 @@ interface PageProps {
 }
 
 const normalizeTableContent = (nodes: any[]): any[] => {
+  if (!Array.isArray(nodes)) return [];
+  
   return nodes.map((node) => {
+    if (!node) return { type: 'p', children: [{ text: '' }] };
+    
     const newNode = { ...node };
 
+    // Handle table cells (td/th)
     if (newNode.type === 'td' || newNode.type === 'th') {
-      newNode.children = newNode.children?.map((p: any) => {
+      // Ensure children exists and is an array
+      if (!Array.isArray(newNode.children)) {
+        newNode.children = [{ type: 'p', children: [{ text: '' }] }];
+      }
+      
+      newNode.children = newNode.children.map((p: any) => {
         const newP = { ...p };
-        newP.children = newP.children?.map((c: any) => ({
+        if (!Array.isArray(newP.children)) {
+          newP.children = [{ text: ' ' }];
+        }
+        newP.children = newP.children.map((c: any) => ({
           ...c,
-          text: c.text ?? " ",
+          text: c?.text ?? " ",
         }));
         return newP;
       });
     }
 
-    if (newNode.children) {
+    // Recursively process children
+    if (newNode.children && Array.isArray(newNode.children)) {
       newNode.children = normalizeTableContent(newNode.children);
+    } else if (newNode.children === undefined) {
+      // Ensure children property exists for nodes that should have it
+      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'].includes(newNode.type)) {
+        newNode.children = [{ text: '' }];
+      }
     }
 
     return newNode;
   });
 };
+
 
 function getFirstImageUrl(nodes: any[]): string | null {
   for (const node of nodes) {
@@ -106,12 +126,75 @@ export default function EditPost({ post, categories = [], allTags = [] }: PagePr
   /** ─────────────────────────
    * NORMALIZE CONTENT
    * ───────────────────────── */
-  const normalizeContent = (nodes: any[]): any[] => nodes.map(node => {
+  const normalizeTableContent = (nodes: any[]): any[] => {
+  if (!Array.isArray(nodes)) return [];
+  
+  return nodes.map((node) => {
+    if (!node) return { type: 'p', children: [{ text: '' }] };
+    
     const newNode = { ...node };
-    if (newNode.children) newNode.children = normalizeContent(newNode.children);
-    if ('text' in newNode && newNode.text == null) newNode.text = '';
+
+    // Handle table cells (td/th)
+    if (newNode.type === 'td' || newNode.type === 'th') {
+      // Ensure children exists and is an array
+      if (!Array.isArray(newNode.children)) {
+        newNode.children = [{ type: 'p', children: [{ text: '' }] }];
+      }
+      
+      newNode.children = newNode.children.map((p: any) => {
+        const newP = { ...p };
+        if (!Array.isArray(newP.children)) {
+          newP.children = [{ text: ' ' }];
+        }
+        newP.children = newP.children.map((c: any) => ({
+          ...c,
+          text: c?.text ?? " ",
+        }));
+        return newP;
+      });
+    }
+
+    // Recursively process children
+    if (newNode.children && Array.isArray(newNode.children)) {
+      newNode.children = normalizeTableContent(newNode.children);
+    } else if (newNode.children === undefined) {
+      // Ensure children property exists for nodes that should have it
+      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'].includes(newNode.type)) {
+        newNode.children = [{ text: '' }];
+      }
+    }
+
     return newNode;
   });
+};
+
+// Update normalizeContent function:
+const normalizeContent = (nodes: any[]): any[] => {
+  if (!Array.isArray(nodes)) return [{ type: 'p', children: [{ text: '' }] }];
+  
+  return nodes.map(node => {
+    if (!node) return { type: 'p', children: [{ text: '' }] };
+    
+    const newNode = { ...node };
+    
+    if (newNode.children && Array.isArray(newNode.children)) {
+      newNode.children = normalizeContent(newNode.children);
+    } else if (newNode.children === undefined) {
+      // Add empty children for text nodes
+      if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'td', 'th'].includes(newNode.type)) {
+        newNode.children = [{ text: '' }];
+      }
+    }
+    
+    // Ensure text property exists
+    if ('text' in newNode && newNode.text == null) {
+      newNode.text = '';
+    }
+    
+    return newNode;
+  });
+};
+
 
   /** ─────────────────────────
    * INITIAL CONTENT
@@ -209,6 +292,30 @@ export default function EditPost({ post, categories = [], allTags = [] }: PagePr
     }
   };
 
+  // Add this helper function
+
+// Update the removeInvalidImages function:
+const removeInvalidImages = (nodes: any[]): any[] => {
+  if (!Array.isArray(nodes)) return [];
+  
+  return nodes
+    .filter(node => {
+      if (!node) return false;
+      // Remove image nodes that have undefined or empty URL
+      if (node.type === KEYS.img && (!node.url || node.url === '')) {
+        console.warn('Removing invalid image node:', node);
+        return false;
+      }
+      return true;
+    })
+    .map(node => {
+      if (node.children && Array.isArray(node.children)) {
+        return { ...node, children: removeInvalidImages(node.children) };
+      }
+      return node;
+    });
+};
+
   /** ─────────────────────────
    * UPDATE HANDLER
    * ───────────────────────── */
@@ -234,30 +341,32 @@ export default function EditPost({ post, categories = [], allTags = [] }: PagePr
       const finalContent = replaceLocalUrls(content, uploadedUrls);
       const thumbnail = getFirstImageUrl(finalContent);
       
-      await axios.put(`/cms/blog/${post.id}`, {
-        title,
-        slug: post.slug ?? title.toLowerCase().replace(/\s+/g, '-'),
-        content: finalContent,
-        status: 'published',
-        state: 'approve',
-        category_id: categoryId,
-        thumbnail,
-        tags: selectedTags.map(id => {
-          const tag = allTags.find(t => t.id === id);
-          if (!tag) return null;
-          return id > 0 ? id : tag.name;
-        }).filter(Boolean),
-      }, { withCredentials: true });
+      const response = await axios.put(`/cms/blog/${post.id}`, {
+  title,
+  slug: post.slug ?? title.toLowerCase().replace(/\s+/g, '-'),
+  content: finalContent,
+  status: 'published',
+  state: 'approve',
+  category_id: categoryId,
+  thumbnail,
+  tags: selectedTags.map(id => {
+    const tag = allTags.find(t => t.id === id);
+    if (!tag) return null;
+    return id > 0 ? id : tag.name;
+  }).filter(Boolean),
+}, { withCredentials: true });
 
-      toast.success('Post updated successfully!', {
-        icon: <CheckCircle2 className="h-4 w-4" />,
-        description: 'Your changes have been saved.'
-      });
+toast.success('Post updated successfully!', {
+  icon: <CheckCircle2 className="h-4 w-4" />,
+  description: 'Your changes have been saved.'
+});
 
-      // Redirect back to blog page after successful update
-      setTimeout(() => {
-        window.location.href = `/cms/blog/${post.slug}`;
-      }, 1500);
+// ✅ Use slug from the API response
+const updatedSlug = response.data.slug;
+
+setTimeout(() => {
+  window.location.href = `/cms/blog/${updatedSlug}`;
+}, 1500);
       
     } catch (error: any) {
       console.error(error);

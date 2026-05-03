@@ -304,52 +304,52 @@ export default function Welcome() {
                         </div>
 
                         {/* RIGHT COLUMN - BLOG CONTENT with sidebar-primary theme */}
-                        <div className="lg:col-span-8">
-                            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-white/20">
-                                <div className="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 px-6 py-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                                <BookOpen className="w-5 h-5" />
-                                                Latest Agricultural Insights
-                                            </h2>
-                                            <p className="text-white/80 text-sm mt-1">
-                                                Expert advice, news, and updates for swine farmers
-                                            </p>
-                                        </div>
-                                        <div className="bg-white/20 rounded-full p-2">
-                                            <Leaf className="w-6 h-6 text-white" />
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="p-6">
-                                    <BlogStatic content={blogContent as any[]} />
-                                </div>
-                                
-                                {/* Call to action with sidebar-primary theme */}
-                                <div className="border-t border-gray-200 px-6 py-4 bg-gradient-to-r from-sidebar-primary/5 to-white">
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-sidebar-primary/10 rounded-full">
-                                                <PenTool className="w-5 h-5 text-sidebar-primary" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-700">Share your experience</p>
-                                                <p className="text-xs text-gray-500">Help other farmers learn from your journey</p>
-                                            </div>
-                                        </div>
-                                        <Link
-                                            href={auth.user ? '/cms/blog/create' : register()}
-                                            className="inline-flex items-center gap-2 bg-sidebar-primary text-white font-semibold rounded-lg px-6 py-2 hover:bg-sidebar-primary/80 transition whitespace-nowrap shadow-md hover:shadow-lg"
-                                        >
-                                            Write a Post
-                                            <ArrowRight className="w-4 h-4" />
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                      <div className="lg:col-span-8">
+    <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-white ">
+        <div className="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 px-6 py-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <BookOpen className="w-5 h-5" />
+                        Latest Agricultural Insights
+                    </h2>
+                    <p className="text-white/80 text-sm mt-1">
+                        Expert advice, news, and updates for swine farmers
+                    </p>
+                </div>
+                <div className="bg-white/20 rounded-full p-2">
+                    <Leaf className="w-6 h-6 text-white" />
+                </div>
+            </div>
+        </div>
+        
+        <div className="p-6">
+            <BlogStatic content={blogContent as any[]} />
+        </div>
+        
+        {/* Call to action with sidebar-primary theme */}
+        <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gradient-to-r from-sidebar-primary/5 to-white dark:to-gray-800">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-sidebar-primary/10 dark:bg-sidebar-primary/20 rounded-full">
+                        <PenTool className="w-5 h-5 text-sidebar-primary" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Share your experience</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Help other farmers learn from your journey</p>
+                    </div>
+                </div>
+                <Link
+                    href={auth.user ? '/cms/blog/create' : register()}
+                    className="inline-flex items-center gap-2 bg-sidebar-primary text-white font-semibold rounded-lg px-6 py-2 hover:bg-sidebar-primary/80 transition whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                    Write a Post
+                    <ArrowRight className="w-4 h-4" />
+                </Link>
+            </div>
+        </div>
+    </div>
+</div>
                     </div>
                 </div>
 
@@ -447,7 +447,7 @@ export default function Welcome() {
                         </div>
 
                         {/* Government Seal */}
-                        <div className="text-center mt-8">
+                        {/* <div className="text-center mt-8">
                             <p className="text-white/40 text-xs">
                                 This system is developed in partnership with the Department of Agriculture 
                                 under the Philippine Swine Industry Development Program.
@@ -455,7 +455,7 @@ export default function Welcome() {
                             <p className="text-white/40 text-xs mt-2">
                                 For emergencies and immediate assistance, contact DA Hotline: 165-02
                             </p>
-                        </div>
+                        </div> */}
                     </div>
                 </footer>
             </div>

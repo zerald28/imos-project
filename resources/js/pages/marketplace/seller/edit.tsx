@@ -405,83 +405,53 @@ const images = listing.gallery_images || [];
 
 
 
-      {/* 🧩 Marketplace Listing Header */}
-      <div className="w-full bg-gradient-to-bl
-       from-gray-700 to-sidebar-primary dark:bg-gradient-to-bl
-       dark:from-sidebar-primary dark:to-gray-700 shadow-lg p-6 mb-6 text-white relative overflow-hidden">
-
-        {/* Background Glow Effects */}
-
-
-        {/* Centered Title */}
-        <div className="relative z-10 text-center mb-8">
-          <h2 className="text-4xl font-extrabold tracking-wide drop-shadow-lg">
-            🐖 {listing.title || "Marketplace Listing Overview"}
-          </h2>
-          <p className="text-white/80 text-sm mt-2">
-            A detailed summary of your current listing and farm location.
-          </p>
-        </div>
-
-        {/* Status Badge */}
-        <div className="flex justify-center mb-10">
-          <span
-            className={`px-5 py-2 rounded-full text-sm font-semibold shadow-lg 
-        ${listing.status === "active"
-                ? "bg-green-500/90 text-white"
-                : "bg-gray-400/80 text-gray-100"}`}
-          >
-            {listing.status === "active" ? "🟢 Active Listing" : "⚪ Draft Listing"}
-          </span>
-        </div>
-
-        {/* Quick Info Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-5 relative z-10">
-          {/* Example Info Card */}
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition">
-            <p className="text-sm text-lime-200 font-semibold">Category</p>
-            <h4 className="text-xl font-bold mt-1">{listing.category || "N/A"}</h4>
+      {/* 🧩 Simplified Manage Your Marketplace Listing Header */}
+      <div className="w-full bg-gradient-to-br from-green-600 to-green-800 dark:from-green-700 dark:to-green-900 shadow-lg overflow-hidden">
+        <div className="px-6 py-8 md:px-8 md:py-10">
+          {/* Title Section */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              Manage Your Marketplace Listing
+            </h1>
+            <p className="text-green-100 text-sm md:text-base">
+              {listing.title || "Marketplace Listing"}
+            </p>
           </div>
 
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition">
-            <p className="text-sm text-lime-200 font-semibold">Price</p>
-            <h4 className="text-xl font-bold mt-1">₱{listing.price_per_unit} ({listing.price_unit_type})</h4>
+          {/* Status Badge */}
+          <div className="flex justify-center mb-8">
+            <span className={`px-4 py-1.5 rounded-full text-sm font-semibold shadow-md 
+              ${listing.status === "active"
+                ? "bg-green-500 text-white"
+                : "bg-gray-500 text-white"}`}>
+              {listing.status === "active" ? "● Active" : "○ Draft"}
+            </span>
           </div>
 
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition">
-            <p className="text-sm text-lime-200 font-semibold">Available Quantity</p>
-            <h4 className="text-xl font-bold mt-1">{listing.available_quantity || 0}</h4>
+          {/* Key Information in a Simple Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div className="text-center">
+              <p className="text-green-200 text-xs uppercase tracking-wide mb-1">Category</p>
+              <p className="text-white font-semibold">{listing.category || "N/A"}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-green-200 text-xs uppercase tracking-wide mb-1">Price</p>
+              <p className="text-white font-semibold">₱{listing.price_per_unit} <span className="text-sm">({listing.price_unit_type})</span></p>
+            </div>
+            <div className="text-center">
+              <p className="text-green-200 text-xs uppercase tracking-wide mb-1">Quantity</p>
+              <p className="text-white font-semibold">{listing.available_quantity || 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-green-200 text-xs uppercase tracking-wide mb-1">Breed</p>
+              <p className="text-white font-semibold truncate">{listing.breed || "N/A"}</p>
+            </div>
           </div>
 
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition">
-            <p className="text-sm text-lime-200 font-semibold">Sex Summary</p>
-            <h4 className="text-xl font-bold mt-1">{listing.sex_summary || "N/A"}</h4>
-          </div>
-
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition">
-            <p className="text-sm text-lime-200 font-semibold">Breed</p>
-            <h4 className="text-xl font-bold mt-1">{listing.breed || "N/A"}</h4>
-          </div>
-
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition">
-            <p className="text-sm text-lime-200 font-semibold">Age Range</p>
-            <h4 className="text-xl font-bold mt-1">{listing.age_range || "N/A"}</h4>
-          </div>
-
-
-          <div className="bg-white/10 rounded-xl p-4 backdrop-blur-md border border-white/10 hover:bg-white/15 transition col-span-2 sm:col-span-2 md:col-span-3 lg:col-span-6">
-            <p className="text-sm text-lime-200 font-semibold">Full Address</p>
-            <h4 className="text-xl font-bold mt-1">{listing.full_address || "N/A"}</h4>
-          </div>
-        </div>
-
-        {/* Management Section */}
-        <div className="mt-10">
-          <div className="bg-gradient-to-r from-gray-800/90 to-green-700/90 rounded-2xl p-6 border border-gray-600 shadow-lg">
-            <h3 className="text-2xl font-bold mb-2">⚙️ Manage Your Marketplace Listing</h3>
-            <p className="text-sm text-white/90">
-              You’re one step away from turning your farm efforts into real profit.
-              Update your listing details or manage your swine selections below.
+          {/* Address Line */}
+          <div className="mt-6 text-center max-w-2xl mx-auto">
+            <p className="text-green-100 text-sm">
+              📍 {listing.full_address || formatAddress(listing)}
             </p>
           </div>
         </div>

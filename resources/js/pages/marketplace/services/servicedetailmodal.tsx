@@ -114,10 +114,10 @@ const ServiceDetailsModal: React.FC<ServiceDetailsModalProps> = ({
                   </div>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-white">
+              {/* <Badge variant="outline" className="bg-white">
                 <Clock className="w-3 h-3 mr-1" />
                 Available Now
-              </Badge>
+              </Badge> */}
             </div>
           </div>
 

@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeftRightIcon, BookOpen, CornerDownLeft, Folder, LayoutGrid, Menu, MessageSquare, Search, SquareArrowUpRight, StoreIcon, Syringe } from 'lucide-react';
+import { ArrowLeftRightIcon, BookOpen, CircleDot, CornerDownLeft, Folder, LayoutGrid, Menu, MessageSquare, Search, SquareArrowUpRight, StoreIcon, Syringe } from 'lucide-react';
 import AppLogo from './app-logo-marketplace';
 import AppLogoIcon from './app-logo-icon';
 import { PigIcon } from '@/components/icons'; 
@@ -481,8 +481,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                     </span>
                                                 </div>
 
-                                                {!n.is_read && <Check className="h-4 w-4 text-green-500 dark:text-green-400 flex-shrink-0 mt-1" />}
-                                            </div>
+                                                {!n.is_read && <CircleDot className="h-4 w-4 text-green-300 fill-green-300" />}
+                   </div>
                                         </div>
                                     ))
                                 )}

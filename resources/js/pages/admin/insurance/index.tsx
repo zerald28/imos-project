@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import ApplicationAuthModal from "./ApplicationAuthModal";
 import { 
   ChevronDown, 
   MoreHorizontal,
@@ -91,6 +92,7 @@ interface Application {
   farmer_name: string;
   proponent_user_id?: number;
   proponent_name: string;
+  status: string;
   cover_type: string;
   number_of_heads: number;
   created_at: string;
@@ -324,6 +326,63 @@ const formatDateTime = (dateString: string) => {
     });
   };
 
+  // In InsuranceIndex.tsx - Add this state near your other modal states
+const [applicationAuthModal, setApplicationAuthModal] = useState<{
+  isOpen: boolean;
+  applicationData: Application | null;
+  pendingAction: 'edit' | null;
+  applicationId: number | null;
+}>({
+  isOpen: false,
+  applicationData: null,
+  pendingAction: null,
+  applicationId: null,
+});
+
+// Add handler functions
+const handleEditApplication = (application: Application) => {
+  // Check if user is the proponent or farmer
+  const isProponent = user?.id === application.proponent_user_id;
+  const isFarmer = user?.id === application.farmer_id;
+  
+  if (isProponent || isFarmer) {
+    // If authorized, go directly to edit
+    router.get(`/insurance/application/${application.id}/edit`);
+  } else {
+    // Show authorization modal
+    setApplicationAuthModal({
+      isOpen: true,
+      applicationData: application,
+      pendingAction: 'edit',
+      applicationId: application.id,
+    });
+  }
+};
+
+const handleAuthContinues = () => {
+  const { pendingAction, applicationId } = applicationAuthModal;
+  
+  if (pendingAction === 'edit' && applicationId) {
+    router.get(`/insurance/application/${applicationId}/edit`);
+  }
+  
+  setApplicationAuthModal({
+    isOpen: false,
+    applicationData: null,
+    pendingAction: null,
+    applicationId: null,
+  });
+};
+
+const handleAuthStays = () => {
+  setApplicationAuthModal({
+    isOpen: false,
+    applicationData: null,
+    pendingAction: null,
+    applicationId: null,
+  });
+};
+
   // Animals Modal Component
   // Update the AnimalsModal component's DialogContent
 const AnimalsModal = ({ 
@@ -336,6 +395,10 @@ const AnimalsModal = ({
   application: Application | null;
 }) => {
   if (!application) return null;
+
+
+
+  
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -885,7 +948,7 @@ const AnimalsModal = ({
               <div className="flex flex-col lg:flex-row gap-4 mb-6">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                     <Input
                       placeholder="Search by farmer name, proponent, or cover type..."
                       className="pl-10 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400"
@@ -926,7 +989,7 @@ const AnimalsModal = ({
                       <TableHead className="dark:text-gray-300">Application #</TableHead>
                       <TableHead className="dark:text-gray-300">Farmer</TableHead>
                       <TableHead className="dark:text-gray-300">Proponent</TableHead>
-                      <TableHead className="dark:text-gray-300">Cover Type</TableHead>
+                      <TableHead className="dark:text-gray-300">Status / Type</TableHead>
                       <TableHead className="dark:text-gray-300">Animals</TableHead>
                       <TableHead className="dark:text-gray-300">Date</TableHead>
                       <TableHead className="text-right dark:text-gray-300">Actions</TableHead>
@@ -952,9 +1015,8 @@ const AnimalsModal = ({
                           <TableCell className="font-medium dark:text-gray-300">{app.farmer_name}</TableCell>
                           <TableCell className="dark:text-gray-300">{app.proponent_name ?? "—"}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize dark:border-gray-700 dark:text-gray-300">
-                              {app.cover_type}
-                            </Badge>
+                              {app.status} / {app.cover_type}
+                          
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -983,9 +1045,9 @@ const AnimalsModal = ({
                                   <Eye className="w-4 h-4 mr-2" /> View Details
                                 </DropdownMenuItem>
 
-                                <DropdownMenuItem onClick={() => router.get(`/insurance/application/${app.id}/edit`)} className="dark:hover:bg-gray-800">
-                                  <Pencil className="w-4 h-4 mr-2" /> Edit Application
-                                </DropdownMenuItem>
+<DropdownMenuItem onClick={() => handleEditApplication(app)} className="dark:hover:bg-gray-800">
+  <Pencil className="w-4 h-4 mr-2" /> Edit Application
+</DropdownMenuItem>
                                 
                                 <DropdownMenuSeparator className="dark:border-gray-700" />
                                 
@@ -1058,6 +1120,16 @@ const AnimalsModal = ({
             onContinue={handleAuthContinue}
             onStay={handleAuthStay}
           />
+
+          {/* Application Authorization Modal */}
+<ApplicationAuthModal
+  isOpen={applicationAuthModal.isOpen}
+  onClose={handleAuthStays}
+  applicationData={applicationAuthModal.applicationData}
+  currentUser={user}
+  onContinue={handleAuthContinues}
+  onStay={handleAuthStay}
+/>
         </div>
       </AppLayout>
     </>

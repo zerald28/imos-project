@@ -300,13 +300,26 @@ public function update(UpdateBlogPostRequest $request, $id)
 public function destroy($id, Request $request)
 {
     $post = BlogPost::findOrFail($id);
+    
+    // Delete the post (this will trigger the deleteImages method via the model)
     $post->delete();
 
-    // Always return JSON response for the frontend to handle
     return response()->json([
         'success' => true,
-        'message' => 'Blog deleted successfully!',
+        'message' => 'Blog post and associated images deleted successfully!',
         'post_id' => $id,
+    ]);
+}
+
+// Optional: Add a force delete method for permanent deletion
+public function forceDestroy($id)
+{
+    $post = BlogPost::withTrashed()->findOrFail($id);
+    $post->forceDeleteWithImages();
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Blog post permanently deleted!',
     ]);
 }
 
@@ -345,10 +358,10 @@ public function publicShow($slug)
     ]);
 }
 
-
+// 5120
 
 public function uploadImage(Request $request) {
-    $request->validate(['file' => 'required|image|max:5120']);
+    $request->validate(['file' => 'required|image|max:5620']);
     $path = $request->file('file')->store('uploads', 'public');
     return response()->json(['url' => "/storage/{$path}"]);
 }

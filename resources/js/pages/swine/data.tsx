@@ -531,7 +531,7 @@ export default function Create({ breeds = [], today, ownerTagNumbers = [], nextT
                 </div>
                 <div className="sm:col-span-17">
                   <textarea
-                    placeholder='Mag bigay ng deskription ng baboy (kulay ng balat at iba pang palatandaan)'
+                    placeholder='Mag bigay ng deskription ng baboy (kulay ng balat at iba pang palatandaan) - optional'
                     id="description"
                     value={data.description}
                     onChange={(e) => setData("description", e.target.value)}

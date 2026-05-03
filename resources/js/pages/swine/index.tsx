@@ -52,21 +52,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type Group = { id: number; name: string; description?: string; group_type: string; };
 
-type Event = {
-  id: string | number;
-  title: string;
-  date: string;
-  type: string;
-  description?: string;
-};
-
-type Schedule = {
-  id: string | number;
-  title: string;
-  date: string;
-  category?: string;
-  description?: string;
-};
 
 type Swine = {
   id: number;
@@ -91,9 +76,9 @@ type PageProps = {
 };
 
 export default function Index() {
-  const { events, schedules } = usePage<{
-    events: Event[];
-    schedules: Schedule[];
+  const { } = usePage<{
+
+
   }>().props;
   const { swine = [], breeds = [], groups = [] } = usePage<PageProps>().props;
 
@@ -190,8 +175,7 @@ export default function Index() {
     }
   };
 
-  const memoizedEvents = useMemo(() => events, [events]);
-  const memoizedSchedules = useMemo(() => schedules, [schedules]);
+
   const { flash } = usePage<{ flash?: { success?: string; error?: string } }>().props;
 
   useEffect(() => {
@@ -334,7 +318,11 @@ export default function Index() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+{!selectMode && (
+  <div className="text-sm text-gray-500 absolute right-15">
+    {filteredSwine.length} of {swine.length} swine
+  </div>
+)}     </div>
           </div>
 
           {/* BUTTONS THAT SHOW IN SMALL SCREEN */}
@@ -425,7 +413,7 @@ export default function Index() {
                     {/* Filter Toggle Button */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Button
+                        {/* <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setShowFilters(!showFilters)}
@@ -438,7 +426,7 @@ export default function Index() {
                               {Object.values(filters).filter(Boolean).length}
                             </Badge>
                           )}
-                        </Button>
+                        </Button> */}
                         
                         {/* Active Filters Display */}
                         {hasActiveFilters && (
@@ -474,9 +462,7 @@ export default function Index() {
                       </div>
                       
                       {/* Results Count */}
-                      <div className="text-sm text-gray-500">
-                        {filteredSwine.length} of {swine.length} swine
-                      </div>
+                     
                     </div>
 
                     {/* Filter Controls */}
@@ -618,6 +604,9 @@ export default function Index() {
                               <span className="font-medium text-sm text-gray-800 dark:text-gray-200">Select Swine</span>
                             </>
                           )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem   onClick={() => setShowFilters(!showFilters)}>
+                          Filters
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

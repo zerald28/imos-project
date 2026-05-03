@@ -195,73 +195,83 @@ export default function SellerDashboard() {
 
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-gradient-to-br from-slate-50 to-white dark:from-gray-900 dark:to-gray-800">
           {/* User Profile Section - With Rating */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Left Welcome Section */}
-            <div className="flex-1 flex flex-col justify-center bg-gradient-to-br from-emerald-50 to-transparent dark:from-emerald-950/30 rounded-2xl p-4 sm:p-6 border border-emerald-100 dark:border-emerald-800 shadow-sm">
-              <h1 className="text-lg sm:text-xl text-emerald-800 dark:text-emerald-400">
-                {user?.name ? (
-                  <>
-                    Welcome back, <span className="font-bold">{user.name}</span>
-                  </>
-                ) : (
-                  "Welcome, Farmer!"
-                )}
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-1 sm:mt-2">
-                Manage your livestock listings, connect with buyers, and grow your farm sustainably.
-              </p>
-            </div>
+          {/* User Profile Section - With Rating */}
+<div className="flex flex-col sm:flex-row gap-4">
+  {/* Left Welcome Section */}
+  <div className="flex-1 flex flex-col justify-center bg-gradient-to-br from-emerald-50 to-transparent dark:from-emerald-950/30 rounded-2xl p-4 sm:p-6 border border-emerald-100 dark:border-emerald-800 shadow-sm">
+    <h1 className="text-lg sm:text-xl text-emerald-800 dark:text-emerald-400">
+      {user?.name ? (
+        <>
+          Welcome back, <span className="font-bold">{user.name}</span>
+        </>
+      ) : (
+        "Welcome, Farmer!"
+      )}
+    </h1>
+    <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-1 sm:mt-2">
+      Manage your livestock listings, connect with buyers, and grow your farm sustainably.
+    </p>
+  </div>
 
-            {/* Seller Info Card with Rating */}
-            <Card className="relative flex-1 border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-              <Link
-                href={route("marketplace.seller.profile.edit")}
-                className="absolute top-2 right-2 sm:top-3 sm:right-3 inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors"
-                title="Edit Seller Profile"
-              >
-                <Edit className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-700 dark:text-emerald-400" />
-                <span className="text-[10px] sm:text-xs text-emerald-700 dark:text-emerald-400">Edit</span>
-              </Link>
+  {/* Seller Info Card with Rating */}
+  <Card className="relative flex-1 border-l-4 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+    <Link
+      href={route("marketplace.seller.profile.edit")}
+      className="absolute top-2 right-2 sm:top-3 sm:right-3 inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors"
+      title="Edit Seller Profile"
+    >
+      <Edit className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-700 dark:text-emerald-400" />
+      <span className="text-[10px] sm:text-xs text-emerald-700 dark:text-emerald-400">Edit</span>
+    </Link>
 
-              <CardContent className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
-                <div className="relative">
-                  <img
-                    src={user_profile_image || "/default.png"}
-                    alt="Profile"
-                    className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-emerald-200 dark:border-emerald-800"
-                  />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-800" />
-                </div>
+    <CardContent className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+      {/* Profile Image with Fallback */}
+      <div className="relative">
+        <Avatar className="w-14 h-14 sm:w-20 sm:h-20">
+          <AvatarImage 
+            src={user_profile_image || undefined} 
+            alt={user?.name || "Profile"}
+            onError={(e) => {
+              // Hide broken image and show fallback
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <AvatarFallback className="bg-emerald-500 text-white text-lg sm:text-2xl font-semibold">
+            {getInitials(user?.name || "User")}
+          </AvatarFallback>
+        </Avatar>
+        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-800" />
+      </div>
 
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base sm:text-xl font-semibold text-slate-800 dark:text-gray-200 truncate">
-                    {user?.name || "Unnamed Seller"}
-                  </h2>
-                  
-                  {/* Rating Display */}
-                  {seller_profile?.average_rating && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <StarRating rating={seller_profile.average_rating} size="sm" />
-                      <span className="text-xs text-slate-500 dark:text-gray-400">
-                        {seller_profile.formatted_rating || 'No ratings yet'}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 mt-1">
-                    <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
-                    <span className="truncate">{seller_profile?.location || "No location available"}</span>
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 mt-0.5 truncate">
-                    {user?.email || "No email available"}
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 mt-0.5 truncate">
-                    {seller_profile?.contact || "No contact information"}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="flex-1 min-w-0">
+        <h2 className="text-base sm:text-xl font-semibold text-slate-800 dark:text-gray-200 truncate">
+          {user?.name || "Unnamed Seller"}
+        </h2>
+        
+        {/* Rating Display */}
+        {seller_profile?.average_rating && (
+          <div className="flex items-center gap-2 mt-1">
+            <StarRating rating={seller_profile.average_rating} size="sm" />
+            <span className="text-xs text-slate-500 dark:text-gray-400">
+              {seller_profile.formatted_rating || 'No ratings yet'}
+            </span>
           </div>
+        )}
+        
+        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 mt-1">
+          <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />
+          <span className="truncate">{seller_profile?.location || "No location available"}</span>
+        </div>
+        <div className="text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 mt-0.5 truncate">
+          {user?.email || "No email available"}
+        </div>
+        <div className="text-[10px] sm:text-xs text-slate-500 dark:text-gray-400 mt-0.5 truncate">
+          {seller_profile?.contact || "No contact information"}
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</div>
 
           {/* Overview Stats - Responsive */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -282,22 +292,7 @@ export default function SellerDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] sm:text-sm text-slate-500 dark:text-gray-400 flex items-center gap-1">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
-                      Reservation Requests
-                    </p>
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200 mt-0.5 sm:mt-1">{overview.total_reserve}</h2>
-                  </div>
-                  <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            
 
             <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
               <CardContent className="p-3 sm:p-4">
@@ -311,6 +306,23 @@ export default function SellerDashboard() {
                   </div>
                   <div className="p-1.5 sm:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                     <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] sm:text-sm text-slate-500 dark:text-gray-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                      Reservation Requests
+                    </p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200 mt-0.5 sm:mt-1">{overview.total_reserve}</h2>
+                  </div>
+                  <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </CardContent>

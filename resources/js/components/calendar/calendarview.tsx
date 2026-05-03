@@ -20,12 +20,12 @@ import styles from "./calendarview.module.css";
 type BackendEvent = {
   id: string | number;
   title: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   type?: "Regular" | "Special" | "da_program" | string;
-  start_time?: string; // HH:mm or HH:mm:ss
+  start_time?: string;
   end_time?: string;
   description?: string;
-  blog_slug?: string | null; // Add blog slug
+  blog_slug?: string | null;
 };
 
 type BackendSchedule = {
@@ -50,13 +50,12 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
   const [fcEvents, setFcEvents] = useState<EventInput[]>([]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
-  const [calendarReady, setCalendarReady] = useState(false);
   const [compact, setCompact] = useState(false);
   const [currentView, setCurrentView] = useState<string>(
     typeof window !== "undefined" && window.innerWidth < 640 ? "listWeek" : "dayGridMonth"
   );
 
-  /* map backend -> FullCalendar events (ensure valid ISO start) */
+  /* map backend -> FullCalendar events */
   useEffect(() => {
     const mapped: EventInput[] = [
       ...events.map((e) => {
@@ -107,7 +106,6 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
     setFcEvents(mapped);
   }, [events, schedules]);
 
-  /* handle event click (show dialog) */
   const handleEventClick = (arg: EventClickArg) => {
     const ev = arg.event;
     const date = ev.start ? ev.start.toISOString().slice(0, 10) : "";
@@ -120,20 +118,64 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
     setOpen(true);
   };
 
-  /* ResizeObserver to detect container width and toggle compact mode */
+  // Listen for sidebar toggle and window resize
   useEffect(() => {
     if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
+    
+    const resizeObserver = new ResizeObserver((entries) => {
       const width = entries[0].contentRect.width;
       setCompact(width < 520);
+      
+      // Force calendar to re-render on resize
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        setTimeout(() => {
+          calendarApi.updateSize();
+        }, 100);
+      }
     });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    
+    resizeObserver.observe(containerRef.current);
+    
+    // Also listen for window resize
+    const handleWindowResize = () => {
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        setTimeout(() => {
+          calendarApi.updateSize();
+        }, 100);
+      }
+    };
+    
+    window.addEventListener('resize', handleWindowResize);
+    
+    // Listen for sidebar toggle events (custom event or mutation observer)
+    const sidebarObserver = new MutationObserver(() => {
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        setTimeout(() => {
+          calendarApi.updateSize();
+        }, 150);
+      }
+    });
+    
+    // Observe parent elements that might change when sidebar toggles
+    const parentElement = containerRef.current.closest('.lg\\:col-span-1');
+    if (parentElement) {
+      sidebarObserver.observe(parentElement, { 
+        attributes: true, 
+        attributeFilter: ['class', 'style'] 
+      });
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleWindowResize);
+      sidebarObserver.disconnect();
+    };
   }, []);
 
-  /* datesSet: runs after calendar changes view/dates; safe place to toggle time display */
   const handleDatesSet = (arg: any) => {
-    setCalendarReady(true);
     const viewType = arg.view?.type;
     const api = arg.view?.calendar;
     if (!api) return;
@@ -149,15 +191,13 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
     setCurrentView(viewType);
   };
 
-  /* helper to get fullcalendar api safely */
   const getCalendarApi = () => calendarRef.current?.getApi ? calendarRef.current.getApi() : null;
 
-  /* custom small event renderer (React node) */
   const eventRenderer = (arg: EventContentArg) => {
     const color = (arg.event.backgroundColor as string) || (arg.event.borderColor as string) || "#999";
     return (
-      <div className="flex items-center gap-1 truncate" style={{ fontSize: compact ? "0.8rem" : undefined }}>
-        <span style={{ width: 6, height: 6, borderRadius: 9999, background: color, display: "inline-block", flexShrink: 0 }} />
+      <div className="flex items-center gap-1 truncate" style={{ fontSize: compact ? "0.7rem" : "0.8rem" }}>
+        <span style={{ width: compact ? 4 : 6, height: compact ? 4 : 6, borderRadius: 9999, background: color, display: "inline-block", flexShrink: 0 }} />
         <span className="truncate" style={{ color: 'var(--fc-text-color)' }}>
           {arg.event.title}
         </span>
@@ -165,7 +205,6 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
     );
   };
 
-  /* format helper for dialog times */
   const formatTime = (timeStr?: string) => {
     if (!timeStr) return "";
     const [h, m] = timeStr.split(":");
@@ -174,7 +213,6 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
     return `${hour}:${m} ${ampm}`;
   };
 
-  /* view-change handler (from dropdown) */
   const changeView = (viewName: string) => {
     const api = getCalendarApi();
     if (!api) return;
@@ -187,84 +225,88 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
 
   return (
     <div className={styles.calendarView}>
-      <div className="bg-oklch(96.2% 0.03 145.8); dark:bg-gray-900 shadow w-full h-full overflow-hidden">
-        <div ref={containerRef} className={`${compact ? "text-[12px]" : "text-[14px]"} transition-all`}>
-          <div className="flex items-center justify-center mb-2 gap-2 mt-2"> 
+      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl w-full h-full overflow-hidden p-3">
+        <div 
+          ref={containerRef} 
+          className={`${compact ? "text-[12px]" : "text-[14px]"} transition-all w-full`}
+          style={{ width: '100%' }}
+        >
+          <div className="flex flex-wrap items-center justify-between mb-3 gap-2"> 
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => getCalendarApi()?.prev()}>
-                <ChevronLeft/> 
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4"/> 
               </Button>
               <Button variant="outline" size="sm" onClick={() => getCalendarApi()?.today()}>
                 Today
               </Button>
               <Button variant="outline" size="sm" onClick={() => getCalendarApi()?.next()}>
-                <ChevronRight/>
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4"/>
               </Button>
             </div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-2">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 truncate">
-              {calendarTitle}
-            </h2>
+            
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {calendarTitle}
+              </h2>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center border-0 gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => changeView("dayGridMonth")}>Month</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => changeView("timeGridWeek")}>Week</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => changeView("listWeek")}>List</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center border-0 gap-2 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                  >
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => changeView("dayGridMonth")}>Month</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => changeView("timeGridWeek")}>Week</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => changeView("listWeek")}>List</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-            initialView={currentView}
-            headerToolbar={{
-              left: "",
-              center: "",
-              right: "",
-            }}
-            events={fcEvents}
-            eventClick={handleEventClick}
-            eventContent={eventRenderer}
-            datesSet={handleDatesSet}
-            fixedWeekCount={false}
-            height="auto"
-            contentHeight="auto"
-            aspectRatio={1.35}
-            expandRows={false}
-            eventDisplay="block"
-            slotMinTime="06:00:00"
-            slotMaxTime="20:00:00"
-            slotDuration="00:30:00"
-            dayMaxEventRows={3}
-            moreLinkClick="popover"
-            views={{
-              timeGridWeek: {
-                dayHeaderFormat: {
-                  weekday: "short",
-                  day: "numeric",
-                  month: undefined,
+          <div className="w-full overflow-x-auto">
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+              initialView={currentView}
+              headerToolbar={false}
+              events={fcEvents}
+              eventClick={handleEventClick}
+              eventContent={eventRenderer}
+              datesSet={handleDatesSet}
+              fixedWeekCount={false}
+              height="auto"
+              contentHeight="auto"
+              aspectRatio={1.2}
+              expandRows={true}
+              eventDisplay="block"
+              slotMinTime="06:00:00"
+              slotMaxTime="20:00:00"
+              slotDuration="00:30:00"
+              dayMaxEventRows={3}
+              moreLinkClick="popover"
+              views={{
+                timeGridWeek: {
+                  dayHeaderFormat: {
+                    weekday: "short",
+                    day: "numeric",
+                  },
                 },
-              },
-              dayGridMonth: {
-                dayHeaderFormat: {
-                  weekday: "short",
+                dayGridMonth: {
+                  dayHeaderFormat: {
+                    weekday: "short",
+                  },
                 },
-              },
-            }}
-          />
+                listWeek: {
+                  listDayFormat: { weekday: "short", month: "numeric", day: "numeric" },
+                },
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -292,7 +334,6 @@ export default function CalendarView({ events = [], schedules = [] }: Props) {
             <p><strong>Type:</strong> {selected?.extendedProps?.kind === "schedule" ? "Farmer Schedule" : selected?.extendedProps?.type ?? "Event"}</p>
             {selected?.extendedProps?.description && <p><strong>Notes:</strong> {selected.extendedProps.description}</p>}
             
-            {/* Blog Link - Show if there's a blog_slug */}
             {selected?.extendedProps?.blog_slug && (
               <p className="pt-2 border-t border-gray-200 dark:border-gray-700">
                 <strong>Blog Post:</strong>{" "}

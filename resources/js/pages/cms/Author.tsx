@@ -281,7 +281,7 @@ export default function AuthorDashboard({
               onClick={handleWriteBlog}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg transition-colors shadow-md hover:shadow-lg text-sm sm:text-base"
             >
-              <Pencil size={16} className="sm:size-18" />
+              <Pencil size={16} className="sm:size-5" />
               <span className="font-medium">Write New Blog</span>
             </button>
           </div>

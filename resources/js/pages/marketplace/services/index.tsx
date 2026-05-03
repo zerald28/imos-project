@@ -480,7 +480,7 @@ const IndexServices: React.FC<Props> = ({ services, filters, auth }) => {
           )}
 
           {/* Services Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-4  sm:p-20">
             {hasServices ? (
               localServices.map((service) => (
                 <Card 
@@ -506,7 +506,7 @@ const IndexServices: React.FC<Props> = ({ services, filters, auth }) => {
                         <div className="absolute bottom-1 sm:bottom-2 left-1 sm:left-2 right-1 sm:right-2">
                           <div className="flex items-center gap-0.5 sm:gap-1 text-white text-[10px] sm:text-xs">
                             <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            <span className="truncate">Read related blog post</span>
+                            <span className="truncate">Read full details and related blog post</span>
                             <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3 ml-auto" />
                           </div>
                         </div>
@@ -600,52 +600,58 @@ const IndexServices: React.FC<Props> = ({ services, filters, auth }) => {
                     </div>
 
                     {/* Status and Action Buttons */}
-                    <div className="flex gap-1 sm:gap-1.5 pt-1">
-                      {service.has_pending_booking ? (
-                        <Badge variant="secondary" className="w-full justify-center py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-[10px] sm:text-xs">
-                          <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                          Pending Booking
-                        </Badge>
-                      ) : service.user.id === auth?.user?.id ? (
-                        <Badge variant="secondary" className="w-full justify-center py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400 text-[10px] sm:text-xs">
-                          Your Service
-                        </Badge>
-                      ) : service.can_rate ? (
-                        <Button 
-                          size="sm" 
-                          className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800"
-                          onClick={() => setRatingService(service)}
-                        >
-                          <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                          Rate Service
-                        </Button>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
-                          onClick={() => handleBookingClick(service)}
-                          disabled={isBooking && bookingServiceId === service.id}
-                        >
-                          {isBooking && bookingServiceId === service.id ? (
-                            'Booking...'
-                          ) : (
-                            <>
-                              <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                              Book Now
-                            </>
-                          )}
-                        </Button>
-                      )}
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                        onClick={() => handleViewDetails(service)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
+<div className="flex gap-1 sm:gap-1.5 pt-1">
+  {service.has_pending_booking ? (
+    <Badge 
+      variant="secondary" 
+      className="flex-1 justify-center py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-[10px] sm:text-xs"
+    >
+      <AlertCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+      Pending Booking
+    </Badge>
+  ) : service.user.id === auth?.user?.id ? (
+    <Badge 
+      variant="secondary" 
+      className="flex-1 justify-center py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400 text-[10px] sm:text-xs"
+    >
+      Your Service
+    </Badge>
+  ) : service.can_rate ? (
+    <Button 
+      size="sm" 
+      className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800"
+      onClick={() => setRatingService(service)}
+    >
+      <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+      Rate Service
+    </Button>
+  ) : (
+    <Button 
+      size="sm" 
+      className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
+      onClick={() => handleBookingClick(service)}
+      disabled={isBooking && bookingServiceId === service.id}
+    >
+      {isBooking && bookingServiceId === service.id ? (
+        'Booking...'
+      ) : (
+        <>
+          <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+          Book Now
+        </>
+      )}
+    </Button>
+  )}
+  
+  <Button 
+    variant="outline" 
+    size="sm" 
+    className="flex-1 h-6 sm:h-7 text-[10px] sm:text-xs dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+    onClick={() => handleViewDetails(service)}
+  >
+    View Details
+  </Button>
+</div>
 
                     {/* Show user's existing rating if any */}
                     {service.user_rating && (

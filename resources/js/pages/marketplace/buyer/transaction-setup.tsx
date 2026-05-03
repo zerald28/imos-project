@@ -242,7 +242,7 @@ const TransactionSetup: React.FC<Props> = ({
       "Completed": "Transaction Completed",
       "Done": "Transaction Completed and Acknowledged",
       "Cancelled": "Transaction Cancelled",
-      "Pending": "Your Request is Pending",
+      "Pending": "Your Request is Pending (seller not yet view the request)",
       "Approved": "Your Request has been Approved",
       "Rejected": "Your Request was Declined",
       "In Progress": "Transaction in Progress",
@@ -388,9 +388,9 @@ const TransactionSetup: React.FC<Props> = ({
   };
 
   const canEditPrice = useMemo(() => {
-    const allowedStates = ["pending_request", "seller_review", "seller_approved"];
-    return allowedStates.includes(transaction.status?.toLowerCase().replace(' ', '_'));
-  }, [transaction.status]);
+  const allowedStates = [ "seller_approved"]; // Removed "pending_request"
+  return allowedStates.includes(transaction.status?.toLowerCase().replace(' ', '_'));
+}, [transaction.status]);
 
 
 
@@ -460,6 +460,12 @@ const [hasCheckedRating, setHasCheckedRating] = useState(false);
         <Head title="Finalize Transaction" />
 
         <Card className="shadow-lg dark:bg-gray-800 dark:border-gray-700">
+           <div className="ml-10">
+              <h2 className="text-lg sm:text-xl font-semibold text-chart-5 dark:text-gray-200">
+                Buyer's Transaction 
+              </h2>
+             
+            </div>
           {/* Sold Swine Warning */}
           {soldTransactionSwineCount > 0 && transaction.status !== "Completed" && transaction.status !== "Done" && (
             <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2">
@@ -563,6 +569,7 @@ const [hasCheckedRating, setHasCheckedRating] = useState(false);
 
           {/* Status Message Boxes */}
           <div className="px-4 sm:px-6 mt-4">
+           
             {transaction.status === "Seller Review" && (
               <div className="flex items-start gap-2 sm:gap-3 bg-green-50 dark:bg-green-900/20 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-400 px-3 py-2 rounded-lg shadow-sm">
                 <span className="text-base sm:text-xl">⏳</span>
@@ -1176,69 +1183,71 @@ const [hasCheckedRating, setHasCheckedRating] = useState(false);
                               </div>
                             </td>
                             
-                            {transaction.price_unit_type === 'per_head' && (
-                              <td className="py-1.5 sm:py-2 px-2 sm:px-3 border dark:border-gray-700">
-                                {isInTransaction && item.status === 'available' ? (
-                                  <div className="flex items-center justify-center gap-1 sm:gap-2">
-                                    <div className="relative">
-                                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[9px] sm:text-xs">₱</span>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.final_amount || ''}
-                                        onChange={(e) => handleFinalAmountChange(index, e.target.value)}
-                                        className="w-16 sm:w-24 pl-5 sm:pl-6 text-center text-[9px] sm:text-xs"
-                                        placeholder="Amount"
-                                      />
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      onClick={() => saveFinalAmount(item.listing_swine_id, item.final_amount || null)}
-                                      className="text-[9px] sm:text-xs h-6 sm:h-7 px-1.5 sm:px-2"
-                                    >
-                                      Save
-                                    </Button>
-                                  </div>
-                                ) : isInTransaction ? (
-                                  <span className="text-gray-500 dark:text-gray-400 text-[9px] sm:text-xs">
-                                    {item.final_amount ? `₱${item.final_amount.toLocaleString()}` : '—'}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-300 dark:text-gray-600">—</span>
-                                )}
-                              </td>
-                            )}
+                           {transaction.price_unit_type === 'per_head' && (
+  <td className="py-1.5 sm:py-2 px-2 sm:px-3 border dark:border-gray-700">
+    {isInTransaction && item.status === 'available' && 
+     transaction.status?.toLowerCase().replace(' ', '_') !== 'pending_request' ? ( // Add this condition
+      <div className="flex items-center justify-center gap-1 sm:gap-2">
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-[9px] sm:text-xs">₱</span>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={item.final_amount || ''}
+            onChange={(e) => handleFinalAmountChange(index, e.target.value)}
+            className="w-16 sm:w-24 pl-5 sm:pl-6 text-center text-[9px] sm:text-xs"
+            placeholder="Amount"
+          />
+        </div>
+        {/* <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => saveFinalAmount(item.listing_swine_id, item.final_amount || null)}
+          className="text-[9px] sm:text-xs h-6 sm:h-7 px-1.5 sm:px-2"
+        >
+          Save
+        </Button> */}
+      </div>
+    ) : isInTransaction ? (
+      <span className="text-gray-500 dark:text-gray-400 text-[9px] sm:text-xs">
+        {item.final_amount ? `₱${item.final_amount.toLocaleString()}` : '—'}
+      </span>
+    ) : (
+      <span className="text-gray-300 dark:text-gray-600">—</span>
+    )}
+  </td>
+)}
 
-                            {transaction.price_unit_type === 'per_kg' && (
-                              <td className="py-1.5 sm:py-2 px-2 sm:px-3 border dark:border-gray-700">
-                                {isInTransaction && item.status === 'available' ? (
-                                  <div className="flex items-center justify-center gap-1 sm:gap-2">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={item.weight || ""}
-                                      onChange={(e) => handleWeightChange(index, e.target.value)}
-                                      className="w-14 sm:w-20 text-center text-[9px] sm:text-xs"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      onClick={() => saveWeight(item.listing_swine_id, Number(item.weight))}
-                                      className="text-[9px] sm:text-xs h-6 sm:h-7 px-1.5 sm:px-2"
-                                    >
-                                      Save
-                                    </Button>
-                                  </div>
-                                ) : isInTransaction ? (
-                                  <span className="text-[9px] sm:text-xs dark:text-gray-300">{typeof item.weight === 'number' ? item.weight.toFixed(2) : item.weight} kg</span>
-                                ) : (
-                                  <span className="text-gray-300 dark:text-gray-600">—</span>
-                                )}
-                              </td>
-                            )}
+                           {transaction.price_unit_type === 'per_kg' && (
+  <td className="py-1.5 sm:py-2 px-2 sm:px-3 border dark:border-gray-700">
+    {isInTransaction && item.status === 'available' && 
+     transaction.status?.toLowerCase().replace(' ', '_') !== 'pending_request' ? ( // Add this condition
+      <div className="flex items-center justify-center gap-1 sm:gap-2">
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          value={item.weight || ""}
+          onChange={(e) => handleWeightChange(index, e.target.value)}
+          className="w-14 sm:w-20 text-center text-[9px] sm:text-xs"
+        />
+        {/* <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => saveWeight(item.listing_swine_id, Number(item.weight))}
+          className="text-[9px] sm:text-xs h-6 sm:h-7 px-1.5 sm:px-2"
+        >
+          Save
+        </Button> */}
+      </div>
+    ) : isInTransaction ? (
+      <span className="text-[9px] sm:text-xs dark:text-gray-300">{typeof item.weight === 'number' ? item.weight.toFixed(2) : item.weight} kg</span>
+    ) : (
+      <span className="text-gray-300 dark:text-gray-600">—</span>
+    )}
+  </td>
+)}
                             
                             {!isAddingSwine && !isTerminalState && (
                               <td className="py-1.5 sm:py-2 px-2 sm:px-3 border dark:border-gray-700">

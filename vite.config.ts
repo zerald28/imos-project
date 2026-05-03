@@ -21,14 +21,14 @@ export default defineConfig({
         jsx: 'automatic',
     },
      server: {
-        host: true,       // bind to all interfaces (allows LAN access)
+        host: '127.0.0.1',  // Use localhost instead of true
         port: 5175,       // fixed port (avoid auto-changing each run)
         cors: true,       // allows Laravel (8000) to load assets
-        hmr: {
-            host: '192.168.0.103',  // ⚡ your laptop's IPv4 LAN address
-            port: 5175,           // must match server.ports
-            protocol: 'ws',
-        },
+        // hmr: {
+        //     host: '192.168.0.103',  // ⚡ your laptop's IPv4 LAN address
+        //     port: 5175,           // must match server.ports
+        //     protocol: 'ws',
+        // },
     },
 });
 

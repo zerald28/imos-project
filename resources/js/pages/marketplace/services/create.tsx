@@ -598,7 +598,8 @@ const CreateService: React.FC<Props> = ({ categories, location, blogPosts = [], 
                             )}
                             <div className="flex-1">
                               <Link
-                                href={`/cms/blog/${selectedBlogPost.slug}`}
+                                // href={`/cms/blog/${selectedBlogPost.slug}`}
+                                 href={`/cms/blog/${selectedBlogPost.id}/edit`}
                                 target="_blank"
                                 className="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 flex items-center gap-1"
                               >

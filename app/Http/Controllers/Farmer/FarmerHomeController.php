@@ -15,25 +15,33 @@ use Carbon\Carbon;
 use App\Models\Conversation;
 use App\Models\CMS\BlogPost;
 use App\Models\CMS\BlogCategory;
+use App\Models\Event;
 use App\Models\Marketplace\MarketplaceTransaction;
 use App\Models\PDF\LivestockInsuranceApplication;
 use App\Models\PDF\VeterinaryDiseaseReport;
 use App\Models\PDF\LivestockAnimal;
+use App\Models\Schedule;
 use App\Models\ServiceBooking;
 
 class FarmerHomeController extends Controller
 {
     public function index(Request $request)
-    {
+    { 
         $user = Auth::user();
+// OR Option B: Single efficient query
+$swineStats = Swine::where('owner_id', $user->id)
+    ->selectRaw('
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = "active" THEN 1 END) as active,
+        COUNT(CASE WHEN status = "dead" THEN 1 END) as dead,
+        COUNT(CASE WHEN status = "sold" THEN 1 END) as sold
+    ')
+    ->first();
 
-        $swineQuery = Swine::where('owner_id', $user->id);
-
-        // BASIC STATS
-        $totalSwine   = $swineQuery->count();
-        $activeSwine  = $swineQuery->where('status', 'active')->count();
-        $deadSwine    = $swineQuery->where('status', 'dead')->count();
-        $soldSwine    = $swineQuery->where('status', 'sold')->count();
+$totalSwine = $swineStats->total;
+$activeSwine = $swineStats->active;
+$deadSwine = $swineStats->dead;
+$soldSwine = $swineStats->sold; 
 
         // BOOKING STATS
 $totalPendingBookings = ServiceBooking::where('provider_id', $user->id)
@@ -162,88 +170,7 @@ $recentMarketplaceActivity = MarketplaceTransaction::where('seller_id', $user->i
         // LAST WEEK FILTER
         $oneWeekAgo = Carbon::now()->subWeek();
 
-        // RECENT SWINE ACTIVITIES (last week)
-        $recentSwineActivities = ActivityLog::where('module', 'swine')
-            ->where('created_at', '>=', $oneWeekAgo)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // TOTAL ACTION COUNTS (last week)
-        $swineActionCounts = ActivityLog::where('module', 'swine')
-            ->where('created_at', '>=', $oneWeekAgo)
-            ->selectRaw('action, COUNT(*) as total')
-            ->groupBy('action')
-            ->get();
-
-        $groups = \App\Models\Swine\SwineGroup::with(['swine.breed'])
-            ->where('owner_id', $user->id)
-            ->get()
-            ->map(function ($group) {
-                $pigsCount = $group->swine->count();
-                $avgWeight = round($group->swine->avg('weight') ?? 0, 2);
-                $breeds = $group->swine
-                    ->pluck('breed.name')
-                    ->unique()
-                    ->values()
-                    ->toArray();
-                $maleCount = $group->swine->where('sex', 'male')->count();
-                $femaleCount = $group->swine->where('sex', 'female')->count();
-
-                return [
-                    'id'           => $group->id,
-                    'name'         => $group->name,
-                    'pigs_count'   => $pigsCount,
-                    'male_count'   => $maleCount,
-                    'female_count' => $femaleCount,
-                    'avg_weight'   => $avgWeight,
-                    'breeds'       => $breeds,
-                    'status'       => $group->group_type,
-                ];
-            });
-
-        $latestMessages = Conversation::where('user_one_id', $user->id)
-            ->orWhere('user_two_id', $user->id)
-            ->with([
-                'userOne:id,name,role',
-                'userTwo:id,name,role',
-                'latestMessage' => function($q) {
-                    $q->withTrashed();
-                }
-            ])
-            ->get()
-            ->map(function ($conversation) use ($user) {
-                $otherUser = $conversation->user_one_id === $user->id 
-                    ? $conversation->userTwo 
-                    : $conversation->userOne;
-
-                $latest = $conversation->latestMessage;
-                if (!$latest) return null;
-
-                switch ($otherUser->role) {
-                    case 'buyer':
-                        $prefix = 'from Marketplace';
-                        break;
-                    case 'admin':
-                    case 'enforcer':
-                        $prefix = 'from DA';
-                        break;
-                    case 'farmer':
-                    default:
-                        $prefix = 'messages you';
-                        break;
-                }
-
-                return [
-                    'id' => $conversation->id,
-                    'sender_name' => $otherUser->name,
-                    'message_preview' => $latest->content,
-                    'prefix' => $prefix,
-                    'created_at' => $latest->created_at->toDateTimeString(),
-                ];
-            })
-            ->filter()
-            ->sortByDesc('created_at')
-            ->values();
+     
 
         // FETCH BLOG POSTS
         // Get DA and Announcement category
@@ -302,7 +229,28 @@ $recentMarketplaceActivity = MarketplaceTransaction::where('seller_id', $user->i
             }),
         ];
 
+         $events = Event::with('blogPost')->get();
+    
+    // Transform events to include blog_slug
+    $transformedEvents = $events->map(function($event) {
+        return [
+            'id' => $event->id,
+            'title' => $event->title,
+            'date' => $event->date instanceof \DateTime ? $event->date->format('Y-m-d') : $event->date,
+            'type' => $event->type,
+            'start_time' => $event->start_time instanceof \DateTime ? $event->start_time->format('H:i:s') : $event->start_time,
+            'end_time' => $event->end_time instanceof \DateTime ? $event->end_time->format('H:i:s') : $event->end_time,
+            'description' => $event->description,
+            'blog_slug' => $event->blogPost ? $event->blogPost->slug : null, // Add blog slug
+            'blog_id' => $event->blog_id,
+        ];
+    });
+    
+    $schedules = Schedule::where('user_id', auth()->id())->get();
+
         return Inertia::render('farmer/index', [
+              'events' => $transformedEvents, // Use transformed events instead of raw events
+        'schedules' => $schedules,
             'stats' => [
                 'totalSwine'               => $totalSwine,
                 'activeSwine'              => $activeSwine,
@@ -335,12 +283,13 @@ $recentMarketplaceActivity = MarketplaceTransaction::where('seller_id', $user->i
                 'animalsWithReports'    => $totalAnimalsWithReports,
                 'totalReports'          => $totalVeterinaryReports,
             ],
-            'recentActivities'          => $recentSwineActivities,
-            'swineActionCounts'         => $swineActionCounts,
-            'swineGroups'               => $groups,
-            'messages'                  => $latestMessages,
+            // 'recentActivities'          => $recentSwineActivities,
+            // 'swineActionCounts'         => $swineActionCounts,
+            // 'swineGroups'               => $groups,
+            // 'messages'                  => $latestMessages,
             'recentMarketplaceActivity' => $recentMarketplaceActivity,
             'blogPosts'                 => $blogPosts,
         ]);
+        
     }
 }

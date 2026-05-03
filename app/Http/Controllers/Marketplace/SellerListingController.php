@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Marketplace\MarketplaceTransaction;
 use App\Models\Marketplace\SwineRequest;
-
+use App\Models\SwineExpense;
 use App\Models\Marketplace\Notification;
 
 use Carbon\Carbon;
@@ -245,6 +245,21 @@ public function index(Request $request)
     ]);
 }
 
+public function getSwineTotalExpenses(Request $request)
+{
+    $request->validate([
+        'swine_ids' => 'required|array',
+        'swine_ids.*' => 'exists:swine,id'
+    ]);
+
+    $totalExpenses = SwineExpense::whereIn('swine_id', $request->swine_ids)
+        ->sum('individual_share');
+
+    return response()->json([
+        'total_expenses' => $totalExpenses,
+        'formatted' => '₱' . number_format($totalExpenses, 2)
+    ]);
+}
 
     // Store new listing
    public function store(Request $request)

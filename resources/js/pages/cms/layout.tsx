@@ -5,6 +5,7 @@ import { Toaster, toast } from 'sonner';
 import { route } from 'ziggy-js';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import MarketplaceIntroLoader from '@/components/MarketplaceIntroLoader';
 
 interface CMSLayoutProps {
   children: ReactNode;
@@ -82,31 +83,36 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
     if (page.props.flash?.error) toast.error(page.props.flash.error);
   }, [page.props.flash]);
 
+  // Close sidebar on route change on mobile
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [currentPath]);
+
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative z-0">
+      <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative z-0 overflow-hidden">
         {/* Mobile overlay - dark mode support */}
         {sidebarOpen && (
           <div 
-            className="fixed inset-0 z-40 bg-black/60 dark:bg-black/80 backdrop-blur-sm md:hidden" 
+            className="fixed inset-0 z-40 bg-black/60 dark:bg-black/80 backdrop-blur-sm md:hidden transition-opacity duration-300" 
             onClick={() => setSidebarOpen(false)} 
           />
         )}
 
-        {/* Sidebar - dark mode support */}
+        {/* Sidebar - dark mode support with mobile optimization */}
         <aside 
           className={`
-            fixed z-50 inset-y-0 left-0 w-72 bg-white dark:bg-gray-800 shadow-2xl dark:shadow-gray-900 flex flex-col 
-            transform md:translate-x-0 transition-all duration-300 ease-in-out
+            fixed z-50 inset-y-0 left-0 w-64 sm:w-72 bg-white dark:bg-gray-800 shadow-2xl dark:shadow-gray-900 flex flex-col 
+            transform md:translate-x-0 transition-transform duration-300 ease-in-out
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           `}
         >
           {/* Sidebar Header - dark mode support */}
-          <div className="p-6 border-b dark:border-gray-700 bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-700 dark:to-emerald-800">
+          <div className="p-4 sm:p-6 border-b dark:border-gray-700 bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-700 dark:to-emerald-800">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-white">IMOSSF CMS</h2>
-                <p className="text-emerald-100 dark:text-emerald-200 text-sm mt-1">Content Management System</p>
+                <h2 className="text-lg sm:text-xl font-bold text-white">IMOSSF CMS</h2>
+                <p className="text-emerald-100 dark:text-emerald-200 text-xs sm:text-sm mt-1">Content Management System</p>
               </div>
               <button 
                 className="md:hidden p-2 rounded-lg hover:bg-emerald-500 dark:hover:bg-emerald-600 text-white transition-colors"
@@ -119,19 +125,19 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
 
           {/* User Info - dark mode support */}
           {userName && (
-            <div className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+            <div className="p-3 sm:p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 border-2 border-white dark:border-gray-700 shadow-md">
-                  <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 font-semibold">
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white dark:border-gray-700 shadow-md">
+                  <AvatarFallback className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 font-semibold text-xs sm:text-sm">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {userName}
                   </p>
                   {userRole && (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getRoleColor()}`}>
+                    <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium ${getRoleColor()}`}>
                       {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
                     </span>
                   )}
@@ -141,7 +147,7 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
           )}
 
           {/* Navigation - dark mode support */}
-          <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-2 sm:px-3 py-4 sm:py-6 space-y-1 overflow-y-auto">
             {menuItems.map(item => {
               const isActive = currentPath.startsWith(item.href);
               
@@ -152,7 +158,7 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
                       href={item.href}
                       preserveState
                       className={`
-                        group flex items-center gap-3 rounded-lg px-3 py-3 transition-all relative
+                        group flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-2 sm:py-3 transition-all relative
                         ${isActive 
                           ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium shadow-sm' 
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -160,12 +166,12 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
                       `}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <span className={isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'}>
+                      <span className={`${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200'}`}>
                         {item.icon}
                       </span>
-                      <span className="flex-1 text-sm">{item.title}</span>
+                      <span className="flex-1 text-xs sm:text-sm">{item.title}</span>
                       {isActive && (
-                        <ChevronRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
                       )}
                     </Link>
                   </TooltipTrigger>
@@ -180,28 +186,30 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
           </nav>
 
           {/* Sidebar Footer - dark mode support */}
-          <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+          <div className="p-3 sm:p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+            {/* <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
               Version 2.0.0
-            </p>
+            </p> */}
           </div>
         </aside>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col md:pl-72 z-0">
+        {/* Main content - Remove padding on mobile */}
+        <div className="flex-1 flex flex-col md:pl-64 lg:pl-72 z-0 overflow-hidden">
           {/* Mobile Header - dark mode support */}
-          <header className="md:hidden flex items-center justify-between bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-30 px-4 py-3 shadow-sm">
-            <div className="flex items-center gap-3">
+          <header className="md:hidden flex items-center justify-between bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-30 px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-2">
               <button 
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 onClick={() => setSidebarOpen(true)}
               >
-                <Menu size={20} className="text-gray-700 dark:text-gray-300" />
+                <Menu size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <h1 className="font-semibold text-gray-900 dark:text-gray-100">{currentTitle}</h1>
+              <h1 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                {currentTitle}
+              </h1>
             </div>
             {userName && (
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium truncate max-w-[150px]">
+              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[120px]">
                 {userName}
               </span>
             )}
@@ -209,9 +217,9 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
 
           {/* Desktop Header - dark mode support */}
           <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hidden md:block shadow-sm sticky top-0 z-30">
-            <div className="px-8 py-4">
+            <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
               <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{currentTitle}</h1>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">{currentTitle}</h1>
                 {userName && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Welcome,</span>
@@ -222,9 +230,10 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
             </div>
           </div>
 
-          {/* Main Content Area */}
+          {/* Main Content Area - No padding on mobile */}
           <main className="flex-1 overflow-y-auto relative z-0 dark:bg-gray-900">
-            <div className="p-6 lg:p-8">
+            {/* Remove default padding on mobile, add on larger screens */}
+            <div className="md:p-4 lg:p-6">
               {children}
             </div>
           </main>
@@ -244,6 +253,8 @@ export default function CMSLayout({ children, userName, userRole }: CMSLayoutPro
             className: 'dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100',
           }}
         />
+
+         <MarketplaceIntroLoader />
       </div>
     </TooltipProvider>
   );
