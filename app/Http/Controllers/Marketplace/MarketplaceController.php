@@ -194,6 +194,7 @@ public function show(Request $request, $id)
         'listingSwine',
         'seller.profile',
         'photos',
+        'vetmedClearance', // Add this to load vetmed clearance
     ])->findOrFail($id);
 
     // ✅ Redirect if owner
@@ -206,7 +207,6 @@ public function show(Request $request, $id)
     }
 
     // ✅ Check if authenticated user has profile (user_information)
-      // ✅ Check if authenticated user has profile (user_information)
     if (auth()->check()) {
         $user = \App\Models\User::with('profile')->find(auth()->id());
 
@@ -279,6 +279,7 @@ public function show(Request $request, $id)
         'listing' => $listing,
         'availableSwine' => $availableSwine,
         'buyer' => $buyer,
+        'vetmedClearance' => $listing->vetmedClearance, // Pass the vetmed clearance
     ]);
 }
 

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\FarmCompliance;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -61,23 +62,36 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserInformation::class, 'user_id');
     }
 
-    protected static function booted()
-    {
-        static::deleting(function ($user) {
-            if ($user->isForceDeleting()) {
-                // Hard delete → remove profile completely
-                $user->profile()->forceDelete();
-            } else {
-                // Soft delete → mark profile deleted_at
-                $user->profile()->delete();
-            }
-        });
+   protected static function booted()
+{
+    /**
+     * ✅ Auto-create Farm Compliance when user is created
+     */
+    static::created(function ($user) {
+        FarmCompliance::create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+        ]);
+    });
 
-        static::restoring(function ($user) {
-            // Restore profile automatically when user is restored
-            $user->profile()->withTrashed()->restore();
-        });
-    }
+    /**
+     * ✅ Handle soft delete (profile)
+     */
+    static::deleting(function ($user) {
+        if ($user->isForceDeleting()) {
+            $user->profile()->forceDelete();
+        } else {
+            $user->profile()->delete();
+        }
+    });
+
+    /**
+     * ✅ Restore profile when user is restored
+     */
+    static::restoring(function ($user) {
+        $user->profile()->withTrashed()->restore();
+    });
+}
 
  // User.php
 public function userInformation()
@@ -222,5 +236,10 @@ public function getTotalRatingsAttribute()
     return $this->userInformation ? $this->userInformation->total_ratings : 0;
 }
 
+
+public function farmCompliance()
+{
+    return $this->hasOne(FarmCompliance::class);
+}
 
 }

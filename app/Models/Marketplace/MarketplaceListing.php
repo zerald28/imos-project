@@ -12,6 +12,7 @@ use App\Models\Marketplace\Reservation;
 use App\Models\Marketplace\MarketplaceTransaction;
 use App\Models\UserInformation;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 class MarketplaceListing extends Model
 {
@@ -19,6 +20,7 @@ class MarketplaceListing extends Model
 
     protected $fillable = [
         'seller_id',
+         'vetmed_clearance_id', // ✅ NEW
         'title',
         'breed',
         'category',
@@ -234,34 +236,55 @@ public function getCardImageAttribute()
     }
 
    // ✅ Smart Search scope
-    public function scopeSmartSearch($query, $search)
-    {
-        $search = strtolower($search); // 🔽 normalize to lowercase
+   public function scopeSmartSearch(Builder $query, string $search): Builder
+{
+    $search = strtolower($search);
 
-        // Filipino/local mappings → standardized category
-        $categoryMappings = [
-            'piglet' => ['baktin', 'bakten', 'baboy-baktin'],
-            'fattening' => ['karnehon', 'letchonon', 'karne'],
-            'breeder' => ['barako', 'butakal','anay'],
-        ];
+    // Filipino/local mappings → standardized category
+    $categoryMappings = [
+        'piglet' => ['baktin', 'bakten', 'baboy-baktin'],
+        'fattening' => ['karnehon', 'letchonon', 'karne'],
+        'breeder' => ['barako', 'butakal', 'anay'],
+    ];
 
-        foreach ($categoryMappings as $category => $keywords) {
-            foreach ($keywords as $keyword) {
-                if (str_contains($search, strtolower($keyword))) {
-                    $query->orWhere('category', 'like', "%{$category}%");
-                    break; // stop after the first match
-                }
+    foreach ($categoryMappings as $category => $keywords) {
+        foreach ($keywords as $keyword) {
+            if (str_contains($search, strtolower($keyword))) {
+                $query->orWhere('category', 'like', "%{$category}%");
+                break;
             }
         }
-
-        return $query;
     }
 
+    return $query;
+}
     public function photos()
 {
     return $this->hasMany(ListingPhoto::class, 'listing_id');
 }
 
 
+public function vetmedClearance()
+{
+    return $this->belongsTo(\App\Models\VetmedClearance::class);
+}
 
+public function isVetmedVerified(): bool
+{
+    return $this->vetmedClearance &&
+           $this->vetmedClearance->status === 'verified' &&
+           !$this->vetmedClearance->isExpired();
+}
+
+
+public function scopeWithVerifiedClearance(Builder $query): Builder
+{
+    return $query->whereHas('vetmedClearance', function ($q) {
+        $q->where('status', 'verified')
+          ->where(function ($q2) {
+              $q2->whereNull('expiry_date')
+                 ->orWhere('expiry_date', '>=', now());
+          });
+    });
+}
 }

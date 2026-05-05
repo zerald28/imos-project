@@ -142,6 +142,19 @@ type Schedule = {
   description?: string;
 };
 
+
+// Add this interface near your other interfaces (around line 90-100)
+interface FarmComplianceData {
+  exists: boolean;
+  registration_number?: string;
+  date_registered?: string;
+  valid_until?: string;
+  status?: string;
+  lgu_name?: string;
+  barangay_name?: string;
+}
+
+
 interface Props {
   stats: Stats;
   insuranceStats: InsuranceStats;
@@ -151,6 +164,7 @@ interface Props {
   messages: Message[];
   recentMarketplaceActivity: MarketplaceActivity[];
   blogPosts: BlogPostsData;
+    farmCompliance: FarmComplianceData; // Add this line
 }
 
 export default function FarmerDashboard({ 
@@ -159,7 +173,8 @@ export default function FarmerDashboard({
   swineGroups, 
   messages, 
   recentMarketplaceActivity,
-  blogPosts 
+  blogPosts ,
+  farmCompliance  // Add this line
 }: Props) {
   const { events, schedules } = usePage<{
        events: Event[];
@@ -207,73 +222,133 @@ export default function FarmerDashboard({
         
 
         {/* Stats Grid - Responsive */}
-        <div className="grid mx-0 gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card className="border-l-4 py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">Total Swine</CardTitle>
-              <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
-                <PigIcon className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
-              <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">{stats.totalSwine}</div>
-              <div className="flex flex-wrap gap-1 mt-1 text-[11px] sm:text-xs">
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.activeSwine} active</span>
-                <span className="text-slate-300 dark:text-gray-600">•</span>
-                <span className="text-rose-600 dark:text-rose-400 font-medium">{stats.deadSwine} dead</span>
-                <span className="text-slate-300 dark:text-gray-600">•</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.soldSwine} sold</span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats Grid - Responsive - Now with 4 cards */}
+<div className="grid mx-0 gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+  {/* Card 1: Total Swine */}
+  <Card className="border-l-4 py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
+      <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">Total Swine</CardTitle>
+      <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
+        <PigIcon className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+      </div>
+    </CardHeader>
+    <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+      <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">{stats.totalSwine}</div>
+      <div className="flex flex-wrap gap-1 mt-1 text-[11px] sm:text-xs">
+        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.activeSwine} active</span>
+        <span className="text-slate-300 dark:text-gray-600">•</span>
+        <span className="text-rose-600 dark:text-rose-400 font-medium">{stats.deadSwine} dead</span>
+        <span className="text-slate-300 dark:text-gray-600">•</span>
+        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.soldSwine} sold</span>
+      </div>
+    </CardContent>
+  </Card>
 
-          <Card className="border-l-4 py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">Marketplace</CardTitle>
-              <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
-                <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
-              <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">{stats.totalMarketplaceListings}</div>
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400">
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.availableListingSwine}</span> available • <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.totalRequests}</span> requests
-              </p>
-            </CardContent>
-          </Card>
+  {/* Card 2: Marketplace */}
+  <Card className="border-l-4 py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
+      <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">Marketplace</CardTitle>
+      <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
+        <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+      </div>
+    </CardHeader>
+    <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+      <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">{stats.totalMarketplaceListings}</div>
+      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400">
+        <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.availableListingSwine}</span> available • <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.totalRequests}</span> requests
+      </p>
+    </CardContent>
+  </Card>
 
-          <Card className="border-l-4  py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">Insurance</CardTitle>
-              <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
-                <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
-              <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">{insuranceStats.totalApplications}</div>
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400">
-                <span className="text-yellow-600 dark:text-yellow-400 font-medium">{insuranceStats.submittedApplications}</span> pending • <span className="text-emerald-600 dark:text-emerald-400 font-medium">{insuranceStats.completedApplications}</span> completed
-              </p>
-            </CardContent>
-          </Card>
+  {/* Card 3: Insurance */}
+  <Card className="border-l-4 py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
+      <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">Insurance</CardTitle>
+      <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
+        <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+      </div>
+    </CardHeader>
+    <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+      <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">{insuranceStats.totalApplications}</div>
+      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400">
+        <span className="text-yellow-600 dark:text-yellow-400 font-medium">{insuranceStats.submittedApplications}</span> pending • <span className="text-emerald-600 dark:text-emerald-400 font-medium">{insuranceStats.completedApplications}</span> completed
+      </p>
+    </CardContent>
+  </Card>
 
-          <Card className="border-l-4 py-0 border-l-emerald-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">CMS/Blog</CardTitle>
-              <div className="p-1 sm:p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
-                <Newspaper className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 py-0 sm:px-4 pb-3 sm:pb-4">
-              <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-gray-200">
-                {(blogPosts.latestDaPost ? 1 : 0) + blogPosts.otherPosts.length}
-              </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400">
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">Latest updates</span> from DA
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+  {/* Card 4: DA Livestock Membership - Clean & Concise */}
+  <Card className="border-l-4 py-0 shadow-sm hover:shadow-md transition-all dark:bg-gray-800 dark:border-gray-700">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
+      <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-gray-400">CLearance Authorization</CardTitle>
+      <div className={`p-1 sm:p-1.5 rounded-full ${
+        farmCompliance.exists && farmCompliance.status === 'approved'
+          ? 'bg-emerald-100 dark:bg-emerald-900/30'
+          : 'bg-slate-100 dark:bg-gray-700'
+      }`}>
+        {farmCompliance.exists && farmCompliance.status === 'approved' ? (
+          <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
+        ) : (
+          <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400 dark:text-slate-500" />
+        )}
+      </div>
+    </CardHeader>
+    <CardContent className="px-3 sm:px-4 pb-2 sm:pb-3">
+      {farmCompliance.exists && farmCompliance.status === 'approved' ? (
+        <>
+          <div className="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400">
+            ✓ Registered
+          </div>
+          <div className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400 mt-1 space-y-0.5">
+            <div className="flex justify-between">
+              <span className="font-medium">Reg No:</span>
+              <span className="font-mono text-[10px]">{farmCompliance.registration_number}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium">Member since:</span>
+              <span>{farmCompliance.date_registered ? new Date(farmCompliance.date_registered).toLocaleDateString() : 'N/A'}</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="text-lg sm:text-xl font-bold text-slate-500 dark:text-gray-400">
+            Not Registered
+          </div>
+          <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400 mt-1">
+            {farmCompliance.exists && farmCompliance.status !== 'approved'
+              ? `Farm Compliance: ${farmCompliance.status}`
+              : 'Complete registration to get verified'}
+          </p>
+        </>
+      )}
+    </CardContent>
+    <CardFooter className="px-3 sm:px-4 pb-3 sm:pb-4 pt-0">
+      <div className="flex justify-between items-center w-full">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 p-0 h-auto"
+          asChild
+        >
+          <Link href={farmCompliance.exists ? "/farm-compliance/details" : "/farm-compliance/register"}>
+            {farmCompliance.exists ? 'Full Details' : 'Register Now'}
+            <ArrowRight className="ml-1 h-3 w-3" />
+          </Link>
+        </Button>
+        {farmCompliance.exists && farmCompliance.status === 'approved' && (
+          <Badge className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] px-1.5">
+            Verified
+          </Badge>
+        )}
+        {farmCompliance.exists && farmCompliance.status !== 'approved' && (
+          <Badge variant="outline" className="text-amber-600 text-[9px] px-1.5">
+            Pending
+          </Badge>
+        )}
+      </div>
+    </CardFooter>
+  </Card>
+</div>
 
         {/* Main Content Grid - Two Columns on Large Screens */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 ">

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin } from "lucide-react";
+import { Badge, Eye, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "sonner";
 import {
@@ -27,6 +27,7 @@ import {
 import { route } from "ziggy-js";
 import { router } from "@inertiajs/react";
 import { Separator } from "@/components/ui/separator";
+import ViewClearanceDialog from '@/pages/vetmed/ViewClearanceDialog';
 
 import { Link } from '@inertiajs/react';
 
@@ -89,7 +90,7 @@ interface Listing {
   image: string;
     gallery_images?: string[]; // array of image paths from storage
     gallery_image_ids?: number[]; // optional, if you track IDs for deletion
-    
+  
 
 }
 
@@ -97,10 +98,28 @@ interface Props {
 
   listing: Listing;
   availableSwine: Swine[];
+   vetmedClearance?: {
+    id: number;
+    clearance_number: string;
+    document_type: string;
+    veterinarian_name: string;
+    license_number: string;
+    issued_by: string;
+    issue_date: string;
+    expiry_date: string;
+    remarks: string;
+    status: string;
+    file_path: string;
+    file_name: string;
+    mime_type: string;
+    file_size: number;
+    rejection_reason?: string;
+    created_at: string;
+  } | null;
 }
 
 
-const EditListing: React.FC<Props> = ({ listing, availableSwine }) => {
+const EditListing: React.FC<Props> = ({ listing, availableSwine, vetmedClearance }) => {
   const [activeTab, setActiveTab] = useState<"swine" | "details">("swine");
   const tabContentRef = useRef<HTMLDivElement>(null);
 
@@ -309,6 +328,18 @@ const [lightboxOpen, setLightboxOpen] = useState(false);
 const [currentIndex, setCurrentIndex] = useState(0);
 const images = listing.gallery_images || [];
 
+
+// Add state for vetmed clearance dialog inside your component
+const [isVetmedDialogOpen, setIsVetmedDialogOpen] = useState(false);
+const [selectedClearance, setSelectedClearance] = useState<any>(null);
+
+// Add this function to handle viewing vetmed clearance
+  const handleViewVetmedClearance = () => {
+    if (vetmedClearance) {
+      setSelectedClearance(vetmedClearance);
+      setIsVetmedDialogOpen(true);
+    }
+  };
 
   return (
  <AppLayout breadcrumbs={breadcrumbs}>
@@ -725,7 +756,82 @@ const images = listing.gallery_images || [];
   </div>
 )}
 
+{/* Add this section inside your left panel (Listing Preview area) */}
+{/* Vetmed Clearance Display Section - After the address section */}
+{vetmedClearance && (
+  <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <FileText className="w-4 h-4 text-green-600" />
+        <span className="text-sm font-medium text-green-700 dark:text-green-300">
+          Vetmed Clearance
+        </span>
+        {vetmedClearance.status === 'verified' && (
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+            Verified
+          </Badge>
+        )}
+        {vetmedClearance.status === 'pending_review' && (
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+            Pending Review
+          </Badge>
+        )}
+        {vetmedClearance.status === 'needs_revision' && (
+          <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+            Needs Revision
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        {/* Edit Button - Only show for pending_review or needs_revision */}
+        {(vetmedClearance.status === 'pending_review' || vetmedClearance.status === 'needs_revision') && (
+          <Link 
+            href={`/vetmed-clearance/${vetmedClearance.id}/edit`}
+            className="inline-flex items-center gap-1 px-2 py-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3l4 4-7 7H10v-4l7-7z" />
+              <path d="M4 20h16" />
+            </svg>
+            Edit
+          </Link>
+        )}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleViewVetmedClearance}
+          className="text-green-600 hover:text-green-700 hover:bg-green-100"
+        >
+          <Eye className="w-4 h-4 mr-1" />
+          View Clearance
+        </Button>
+      </div>
+    </div>
+    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+      Clearance Number: {vetmedClearance.clearance_number || 'N/A'}
+    </p>
+    {vetmedClearance.expiry_date && (
+      <p className="text-xs text-gray-500 mt-1">
+        Valid until: {new Date(vetmedClearance.expiry_date).toLocaleDateString()}
+      </p>
+    )}
+    {vetmedClearance.status === 'needs_revision' && vetmedClearance.rejection_reason && (
+      <p className="text-xs text-red-600 dark:text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 p-1.5 rounded">
+        <strong>Revision needed:</strong> {vetmedClearance.rejection_reason}
+      </p>
+    )}
+  </div>
+)}
 
+{/* Dialog at the end of component */}
+<ViewClearanceDialog
+  clearance={selectedClearance}
+  isOpen={isVetmedDialogOpen}
+  onClose={() => {
+    setIsVetmedDialogOpen(false);
+    setSelectedClearance(null);
+  }}
+/>
 
         </div>
 
@@ -913,6 +1019,7 @@ const images = listing.gallery_images || [];
       </div>
       <Toaster richColors position="top-right" />
     </div>
+    
 </AppLayout>
   );
 };

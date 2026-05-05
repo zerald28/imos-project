@@ -53,12 +53,24 @@ interface Swine {
   status: string;
 }
 
+interface VetmedClearance {
+  id: number;
+  clearance_number: string;
+  updated_at: string;
+  issue_date: string;
+  expiry_date: string;
+}
+
 interface Props {
   availableSwine?: Swine[];
   selectedSwineIds?: number[];
+    vetmedClearances?: VetmedClearance[]; // Add this
+     latestClearanceId?: number | null; // Add this
 }
 
-const CreateListing: React.FC<Props> = ({ availableSwine = [], selectedSwineIds = [] }) => {
+const CreateListing: React.FC<Props> = ({ availableSwine = [], selectedSwineIds = [],  vetmedClearances = [],
+  latestClearanceId = null // Add this parameter
+ }) => {
   const [selectedCount, setSelectedCount] = useState(selectedSwineIds.length);
   const [activeTab, setActiveTab] = useState<'details' | 'swine'>('details');
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -79,6 +91,7 @@ const isFarmer = userRole === "farmer";
     image: null as File | null,
     images: [] as File[],
     swine_ids: selectedSwineIds,
+   vetmed_clearance_id: latestClearanceId, // Auto-select the latest clearance
   });
 
    // Calculate profitability metrics
@@ -391,6 +404,21 @@ const getPriceInputStyle = () => {
     }
   }, [selectedSwineIds, availableSwine]);
 
+
+    const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+
+
+
   return (
     <AppLayout>
 
@@ -574,6 +602,11 @@ const getPriceInputStyle = () => {
       <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       <span>Listing Title</span>
       <span className="text-xs text-gray-500 ml-1">(Required)</span>
+      {!data.vetmed_clearance_id && errors.vetmed_clearance_id && (
+  <div className="text-xs text-red-600 mt-1">
+    Please select a Vetmed Clearance
+  </div>
+)}
     </label>
     <Input
       placeholder="e.g., Premium Fattening Pigs - Ready for Market"
@@ -984,31 +1017,158 @@ const getPriceInputStyle = () => {
     </div>
   </div>
 
-  {/* Submit Button */}
-  <Button
-    type="submit"
-    disabled={processing}
-    className="w-full bg-gradient-to-r from-green-600 to-green-700 
-              hover:from-green-700 hover:to-green-800 
-              dark:from-green-700 dark:to-green-800 
-              dark:hover:from-green-600 dark:hover:to-green-700 
-              text-white py-4 sm:py-6 rounded-lg sm:rounded-xl text-base sm:text-lg 
-              font-semibold shadow-sm sm:shadow-lg hover:shadow-md sm:hover:shadow-xl 
-              transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed 
-              mt-4 sm:mt-6"
+  
+{/* Vetmed Clearance Section - Modified */}
+<div className="space-y-2">
+  <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+    <span>Vetmed Clearance</span>
+    <span className="text-xs text-red-500 ml-1">(Required)</span>
+  </label>
+  
+  <Select
+    value={data.vetmed_clearance_id?.toString() || "none"}
+    onValueChange={(value) => setData("vetmed_clearance_id", value === "none" ? null : parseInt(value))}
   >
-    {processing ? (
-      <>
-        <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2 sm:mr-3"></div>
-        <span className="text-sm sm:text-base">Creating Listing...</span>
-      </>
-    ) : (
-      <>
-        <Rocket className="mr-2 sm:mr-3 w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="text-sm sm:text-base">Submit Listing</span>
-      </>
-    )}
-  </Button>
+    <SelectTrigger className={`bg-white dark:bg-gray-800 border-gray-300 
+                              dark:border-gray-700 focus:border-green-500
+                              text-sm h-11 sm:h-12 w-full ${
+      !data.vetmed_clearance_id && errors.vetmed_clearance_id ? 'border-red-500' : ''
+    }`}>
+      <SelectValue placeholder="Select Vetmed Clearance" />
+    </SelectTrigger>
+    <SelectContent className="bg-white dark:bg-gray-800 border-green-200 
+                            dark:border-gray-700">
+      <SelectItem value="none" className="hover:bg-green-50 dark:hover:bg-gray-700 text-sm">
+        None (Not Recommended)
+      </SelectItem>
+      {vetmedClearances.map((clearance) => (
+        <SelectItem 
+          key={clearance.id} 
+          value={clearance.id.toString()}
+          className="hover:bg-green-50 dark:hover:bg-gray-700"
+        >
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">
+                {clearance.clearance_number}
+              </span>
+              <span className="text-xs text-gray-500">
+                Updated: {formatDate(clearance.updated_at)}
+              </span>
+            </div>
+            <div className="flex gap-2 text-xs text-gray-500">
+              <span>Issued: {formatDate(clearance.issue_date)}</span>
+              {clearance.expiry_date && (
+                <span className="text-orange-600">
+                  Expires: {formatDate(clearance.expiry_date)}
+                </span>
+              )}
+            </div>
+          </div>
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+  
+  {/* Show warning when "None" is selected */}
+  {data.vetmed_clearance_id === null && (
+    <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+      <div className="flex items-start gap-2">
+        <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
+            ⚠️ No Vetmed Clearance Selected
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            Vetmed Clearance is required for listing. Please select a valid clearance or 
+            <Link href="/vetmed-clearance/create" className="text-blue-600 hover:underline ml-1">
+              upload one now →
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+  
+  {/* Show success message when valid clearance is selected */}
+  {data.vetmed_clearance_id && (
+    <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+      <div className="flex items-start gap-2">
+        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-green-700 dark:text-green-300">
+            ✅ Verified Clearance Selected
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            This listing will display your verified Vetmed Clearance, increasing buyer confidence.
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+  
+  {errors.vetmed_clearance_id && (
+    <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 p-2 sm:p-3 
+                  bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+      <span>{errors.vetmed_clearance_id}</span>
+    </div>
+  )}
+</div>
+
+{/* Show warning when NO clearances exist at all */}
+{vetmedClearances.length === 0 && (
+  <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+    <div className="flex items-start gap-2">
+      <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+          ⛔ No Valid Vetmed Clearance Found
+        </p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          You need a valid Vetmed Clearance to create a listing. 
+          <Link href="/vetmed-clearance/create" className="text-blue-600 hover:underline ml-1">
+            Upload one now →
+          </Link>
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Submit Button - Disabled if no clearance selected OR no clearances available */}
+<Button
+  type="submit"
+  disabled={processing || !data.vetmed_clearance_id || vetmedClearances.length === 0}
+  className="w-full bg-gradient-to-r from-green-600 to-green-700 
+            hover:from-green-700 hover:to-green-800 
+            dark:from-green-700 dark:to-green-800 
+            dark:hover:from-green-600 dark:hover:to-green-700 
+            text-white py-4 sm:py-6 rounded-lg sm:rounded-xl text-base sm:text-lg 
+            font-semibold shadow-sm sm:shadow-lg hover:shadow-md sm:hover:shadow-xl 
+            transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed 
+            mt-4 sm:mt-6"
+>
+  {processing ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2 sm:mr-3"></div>
+      <span className="text-sm sm:text-base">Creating Listing...</span>
+    </>
+  ) : (
+    <>
+      <Rocket className="mr-2 sm:mr-3 w-4 h-4 sm:w-5 sm:h-5" />
+      <span className="text-sm sm:text-base">Submit Listing</span>
+    </>
+  )}
+</Button>
+
+{/* Show helper text when button is disabled */}
+{(!data.vetmed_clearance_id || vetmedClearances.length === 0) && (
+  <p className="text-xs text-red-500 text-center mt-2">
+    * Please select a valid Vetmed Clearance to submit your listing
+  </p>
+)}
 </form>
                 </div>
               </Card>

@@ -43,6 +43,7 @@ use App\Http\Controllers\Farmer\FarmerHomeController;
 use App\Http\Controllers\CMS\AuthorBlogController;
 use App\Http\Controllers\CMS\AdminCMSController;
 use App\Http\Controllers\CMS\BlogLikeController;
+use App\Http\Controllers\Farmer\FarmComplianceController;
 use App\Http\Controllers\FarmerRatingController;
 use App\Http\Controllers\VeterinaryRequestController;
 use App\Http\Controllers\ImosNotificationController;
@@ -51,6 +52,7 @@ use App\Http\Controllers\LivestockServiceController;
 use App\Http\Controllers\Marketplace\DirectSaleController;
 use App\Http\Controllers\ServiceBookingController;
 use App\Http\Controllers\ServiceRatingController;
+use App\Http\Controllers\VetmedClearanceController;
 
 // Route::get('/', function () {
 //     return Inertia::render('welcome');
@@ -81,6 +83,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/imos-notifications', [ImosNotificationController::class, 'index']);
     Route::post('/imos-notifications/{id}/read', [ImosNotificationController::class, 'markAsRead']);
     Route::post('/imos-notifications/read-all', [ImosNotificationController::class, 'markAllAsRead']);
+
+
+    // / Farm Compliance Routes (accessible by both farmers and admins)
+Route::prefix('farm-compliance')->group(function () {
+    Route::get('/details', [FarmComplianceController::class, 'show'])->name('farm-compliance.details');
+    Route::get('/register', [FarmComplianceController::class, 'create'])->name('farm-compliance.register');
+    Route::post('/register', [FarmComplianceController::class, 'store'])->name('farm-compliance.store');
+    Route::get('/{id}', [FarmComplianceController::class, 'show'])->name('farm-compliance.show');
+    Route::put('/{id}', [FarmComplianceController::class, 'update'])->name('farm-compliance.update');
+    Route::delete('/{id}', [FarmComplianceController::class, 'destroy'])->name('farm-compliance.destroy');
+});
+
+// Admin Routes for Farm Compliance Management
+Route::prefix('admin')->middleware(['auth'])->group(function () {
+    Route::get('/farm-compliances', [FarmComplianceController::class, 'index'])->name('admin.farm-compliances.index');
+    Route::get('/farm-compliances/{id}', [FarmComplianceController::class, 'show'])->name('admin.farm-compliances.show');
+});
 });
 
 
@@ -268,6 +287,21 @@ Route::post('/posts/{id}/status', [AdminCMSController::class, 'updateStatus'])
 // Routes for authenticated users
 // ---------------------------
 Route::middleware(['auth', 'verified',])->group(function () {
+
+
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('vetmed-clearance', VetmedClearanceController::class);
+
+});
+
+// Admin Routes - for admins only
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/vetmed-clearances', [VetmedClearanceController::class, 'adminIndex'])->name('vetmed.index');
+    Route::patch('/vetmed-clearances/{vetmedClearance}/status', [VetmedClearanceController::class, 'updateStatus'])->name('vetmed.update-status');
+});
+
 
 
 // Simple route to view the PDF
@@ -598,7 +632,9 @@ Route::get('my-swine', [SwineController::class, 'index'])->name('swine-managemen
             
             // FARMERS DASHBOARD=======================================
             Route::middleware('auth')->get('/farmer/home', [FarmerHomeController::class, 'index'])->name('farmer.home');
+            // Route::get('/farm-compliance/details', [FarmerHomeController::class, 'showFarmCompliance'])->name('farm-compliance.details');
 
+            // Farm Compliance Routes
 
 
         //---------------------HomePage
@@ -700,6 +736,8 @@ Route::get('/find-by-swine/{swineId}', [SellerListingController::class, 'findByS
     // Using web.php for simplicity
     Route::get('/listings/{listing}/swine-requests', [MarketplaceController::class, 'getSwineRequests']);
 });
+
+
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

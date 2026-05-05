@@ -26,9 +26,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             // Marketplace listing reference
-            $table->foreignId('marketplace_listing_id')
-                ->constrained('marketplace_listings')
-                ->cascadeOnDelete();
+         
 
             // Admin / verifier
             $table->foreignId('verified_by')
@@ -91,7 +89,7 @@ return new class extends Migration
             |--------------------------------------------------------------------------
             */
 
-            $table->index('marketplace_listing_id');
+           
             $table->index('user_id');
             $table->index('status');
             $table->index('expiry_date');

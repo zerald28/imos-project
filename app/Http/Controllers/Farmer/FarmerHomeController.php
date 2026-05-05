@@ -16,6 +16,7 @@ use App\Models\Conversation;
 use App\Models\CMS\BlogPost;
 use App\Models\CMS\BlogCategory;
 use App\Models\Event;
+use App\Models\FarmCompliance;
 use App\Models\Marketplace\MarketplaceTransaction;
 use App\Models\PDF\LivestockInsuranceApplication;
 use App\Models\PDF\VeterinaryDiseaseReport;
@@ -248,6 +249,25 @@ $recentMarketplaceActivity = MarketplaceTransaction::where('seller_id', $user->i
     
     $schedules = Schedule::where('user_id', auth()->id())->get();
 
+
+    $farmCompliance = FarmCompliance::where('user_id', $user->id)->first();
+
+$farmComplianceData = [
+    'exists' => false,
+];
+
+if ($farmCompliance) {
+    $farmComplianceData = [
+        'exists' => true,
+        'registration_number' => $farmCompliance->registration_number,
+        'date_registered' => $farmCompliance->date_registered ? $farmCompliance->date_registered->format('Y-m-d') : null,
+        'valid_until' => $farmCompliance->valid_until ? $farmCompliance->valid_until->format('Y-m-d') : null,
+        'status' => $farmCompliance->status,
+        'lgu_name' => $farmCompliance->lgu_name,
+        'barangay_name' => $farmCompliance->barangay_name,
+    ];
+}
+
         return Inertia::render('farmer/index', [
               'events' => $transformedEvents, // Use transformed events instead of raw events
         'schedules' => $schedules,
@@ -289,7 +309,22 @@ $recentMarketplaceActivity = MarketplaceTransaction::where('seller_id', $user->i
             // 'messages'                  => $latestMessages,
             'recentMarketplaceActivity' => $recentMarketplaceActivity,
             'blogPosts'                 => $blogPosts,
+             'farmCompliance' => $farmComplianceData,
         ]);
         
     }
+
+
+    public function showFarmCompliance()
+{
+    $compliance = FarmCompliance::where('user_id', Auth::id())->first();
+    
+    if (!$compliance) {
+        return redirect()->back()->with('error', 'No farm compliance record found.');
+    }
+    
+    return Inertia::render('farmer/FarmComplianceDetails', [
+        'compliance' => $compliance,
+    ]);
+}
 }

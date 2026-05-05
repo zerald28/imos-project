@@ -3,7 +3,7 @@ import { Head, Link } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ChevronLeft, ChevronRight, MessageCircle, MessageCircleMore, Store, User } from "lucide-react";
+import { ArrowLeft, Badge, ChevronLeft, ChevronRight, Eye, FileText, MessageCircle, MessageCircleMore, Store, User } from "lucide-react";
 import { Inertia } from "@inertiajs/inertia";
 import axios from "axios";
 import { Toaster } from "sonner";
@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import AppLayout from "@/layouts/marketplaceLayout";
 import { type BreadcrumbItem } from "@/types";
 import { route } from "ziggy-js";
-
+// Add this import with the other imports
+import ViewClearanceDialog from '@/pages/vetmed/ViewClearanceDialog';
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Marketplace", href: "#" },
   { title: "Marketplace", href: "/marketplace/show" }
@@ -68,6 +69,24 @@ interface Buyer {
 interface Props {
   listing: Listing;
   buyer?: Buyer;
+  vetmedClearance?: {
+    id: number;
+    clearance_number: string;
+    document_type: string;
+    veterinarian_name: string;
+    license_number: string;
+    issued_by: string;
+    issue_date: string;
+    expiry_date: string;
+    remarks: string;
+    status: string;
+    file_path: string;
+    file_name: string;
+    mime_type: string;
+    file_size: number;
+    rejection_reason?: string;
+    created_at: string;
+  } | null;
 }
 
 // Function to generate initials from name
@@ -99,7 +118,7 @@ const getProfileColor = (name: string) => {
   return colors[index];
 };
 
-const Show: React.FC<Props> = ({ listing, buyer }) => {
+const Show: React.FC<Props> = ({ listing, buyer,  vetmedClearance }) => {
   // Combine main image + gallery images safely
   const images = React.useMemo(
     () => [listing.image, ...(listing.gallery_images || [])].filter(Boolean) as string[],
@@ -302,6 +321,18 @@ const Show: React.FC<Props> = ({ listing, buyer }) => {
     ? totalWeight * listing.price_per_unit 
     : selectedSwineIds.length * listing.price_per_unit;
 
+
+      const [isVetmedDialogOpen, setIsVetmedDialogOpen] = useState(false);
+  const [selectedClearance, setSelectedClearance] = useState<any>(null);
+
+  // Function to handle viewing vetmed clearance
+  const handleViewVetmedClearance = () => {
+    if (vetmedClearance) {
+      setSelectedClearance(vetmedClearance);
+      setIsVetmedDialogOpen(true);
+    }
+  };
+
   return (
     <>
       <AppLayout breadcrumbs={breadcrumbs}>
@@ -436,7 +467,11 @@ const Show: React.FC<Props> = ({ listing, buyer }) => {
                     </div>
                   </Link>
                 </div>
+
+                
               </div>
+
+             
 
               {/* Action Buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
@@ -591,6 +626,58 @@ const Show: React.FC<Props> = ({ listing, buyer }) => {
                     })}
                   </tbody>
                 </table>
+
+                  {/* ✅ Vetmed Clearance Section - MOVED HERE (after table, before selected swine section) */}
+    {vetmedClearance && (
+      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+              Vetmed Clearance
+            </span>
+            {vetmedClearance.status === 'verified' && (
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                Verified
+              </Badge>
+            )}
+            {vetmedClearance.status === 'pending_review' && (
+              <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                Pending Review
+              </Badge>
+            )}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleViewVetmedClearance}
+            className="text-green-600 hover:text-green-700 hover:bg-green-100"
+          >
+            <Eye className="w-4 h-4 mr-1" />
+            View Clearance
+          </Button>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+          Clearance Number: {vetmedClearance.clearance_number || 'N/A'}
+        </p>
+        {vetmedClearance.expiry_date && (
+          <p className="text-xs text-gray-500 mt-1">
+            Valid until: {new Date(vetmedClearance.expiry_date).toLocaleDateString()}
+          </p>
+        )}
+        {vetmedClearance.status === 'verified' && (
+          <div className="mt-2 flex items-center gap-1">
+            <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs text-green-600 dark:text-green-400">
+              This seller has a verified veterinary clearance
+            </p>
+          </div>
+        )}
+      </div>
+    )}
+
               </div>
 
               {selectedSwineIds.length > 0 && (
@@ -628,6 +715,7 @@ const Show: React.FC<Props> = ({ listing, buyer }) => {
             </div>
           </div>
         </div>
+
 
         {/* Request Modal - WITHOUT Message Field */}
         {showRequestModal && (
@@ -820,6 +908,28 @@ const Show: React.FC<Props> = ({ listing, buyer }) => {
             },
           }}
         />
+
+        {/* Vetmed Clearance Dialog */}
+<ViewClearanceDialog
+  clearance={selectedClearance}
+  isOpen={isVetmedDialogOpen}
+  onClose={() => {
+    setIsVetmedDialogOpen(false);
+    setSelectedClearance(null);
+  }}
+/>
+
+<Toaster 
+  position="top-right" 
+  richColors 
+  toastOptions={{
+    style: {
+      background: 'var(--background)',
+      color: 'var(--foreground)',
+      border: '1px solid var(--border)',
+    },
+  }}
+/>
       </AppLayout>
     </>
   );

@@ -26,7 +26,7 @@ class VetmedClearance extends Model
      */
     protected $fillable = [
         'user_id',
-        'marketplace_listing_id',
+       
         'verified_by',
 
         'clearance_number',
@@ -78,10 +78,7 @@ class VetmedClearance extends Model
     /**
      * Marketplace listing this clearance belongs to
      */
-    public function marketplaceListing(): BelongsTo
-    {
-        return $this->belongsTo(MarketplaceListing::class);
-    }
+  
 
     /**
      * Admin / personnel who verified it

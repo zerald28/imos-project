@@ -16,7 +16,7 @@ use App\Models\Marketplace\MarketplaceTransaction;
 use App\Models\Marketplace\SwineRequest;
 use App\Models\SwineExpense;
 use App\Models\Marketplace\Notification;
-
+use App\Models\VetmedClearance;
 use Carbon\Carbon;
 
 class SellerListingController extends Controller
@@ -225,8 +225,11 @@ public function index(Request $request)
 }
 
 
-    // Show create form
- public function create(Request $request)
+    // In your SellerListingController.php
+
+// In your SellerListingController.php
+
+public function create(Request $request)
 {
     $user = $request->user();
 
@@ -235,15 +238,30 @@ public function index(Request $request)
         ->doesntHave('listings')
         ->get();
 
+    // Fetch existing VetmedClearances for this user
+    $vetmedClearances = VetmedClearance::where('user_id', $user->id)
+        ->where(function($q) {
+            $q->whereNull('expiry_date')
+              ->orWhere('expiry_date', '>=', now());
+        })
+        ->orderBy('updated_at', 'desc')
+        ->get(['id', 'clearance_number', 'updated_at', 'issue_date', 'expiry_date']);
+
+    // Get the latest clearance ID (first item from ordered collection)
+    $latestClearanceId = $vetmedClearances->isNotEmpty() ? $vetmedClearances->first()->id : null;
+
     return Inertia::render('marketplace/seller/create', [
         'availableSwine' => $availableSwine,
         'selectedSwineIds' => $request->query('swine_ids', []),
+        'vetmedClearances' => $vetmedClearances,
+        'latestClearanceId' => $latestClearanceId, // Pass the latest ID
         'authUser' => [
             'id' => $user->id,
             'role' => $user->role,
         ],
     ]);
 }
+
 
 public function getSwineTotalExpenses(Request $request)
 {
@@ -262,7 +280,9 @@ public function getSwineTotalExpenses(Request $request)
 }
 
     // Store new listing
-   public function store(Request $request)
+   // In your SellerListingController.php
+
+public function store(Request $request)
 {
     $request->validate([
         'title' => 'required|string|max:255',
@@ -272,116 +292,128 @@ public function getSwineTotalExpenses(Request $request)
         'swine_ids' => 'required|array|min:1',
         'swine_ids.*' => 'exists:swine,id',
         'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
-          'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120', // ✅ gallery
-   
-
+        'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        'vetmed_clearance_id' => 'nullable|exists:vetmed_clearances,id', // ✅ Add validation
     ]);
 
-   DB::transaction(function () use ($request) {
-    $user = $request->user();
+    DB::transaction(function () use ($request) {
+        $user = $request->user();
 
-    // Handle thumbnail image
-    $imagePath = null;
-    if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('listings', 'public');
-    }
+        // Handle thumbnail image
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('listings', 'public');
+        }
 
-    // Get user address
-    $address = \App\Models\Marketplace\MarketplaceListing::assignAddressFromUser($user);
+        // Get user address
+        $address = \App\Models\Marketplace\MarketplaceListing::assignAddressFromUser($user);
 
-    // Create marketplace listing
-    $listing = MarketplaceListing::create(array_merge([
-        'seller_id' => $user->id,
-        'title' => $request->title,
-        'description' => $request->description,
-        'category' => $request->category,
-        'price_per_unit' => $request->price_per_unit,
-        'price_unit_type' => $request->price_unit_type,
-        'available_quantity' => count($request->swine_ids),
-        'image' => $imagePath,
-    ], $address));
+        // Create marketplace listing with vetmed_clearance_id
+        $listing = MarketplaceListing::create(array_merge([
+            'seller_id' => $user->id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'category' => $request->category,
+            'price_per_unit' => $request->price_per_unit,
+            'price_unit_type' => $request->price_unit_type,
+            'available_quantity' => count($request->swine_ids),
+            'image' => $imagePath,
+            'vetmed_clearance_id' => $request->vetmed_clearance_id, // ✅ Add this line
+        ], $address));
 
-    // Save gallery images
-    if ($request->hasFile('images')) {
-        foreach ($request->file('images') as $img) {
-            $path = $img->store('listings', 'public');
-            \App\Models\Marketplace\ListingPhoto::create([
+        // Save gallery images
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('listings', 'public');
+                \App\Models\Marketplace\ListingPhoto::create([
+                    'listing_id' => $listing->id,
+                    'path' => $path,
+                ]);
+            }
+        }
+
+        // Attach swine to listing and update status
+        foreach ($request->swine_ids as $swineId) {
+            $swine = Swine::findOrFail($swineId);
+
+            // Create listing_swine record
+            $listingSwine = ListingSwine::create([
                 'listing_id' => $listing->id,
-                'path' => $path,
+                'swine_id' => $swine->id,
+                'seller_id' => $user->id,
+                'status' => 'available',
+            ]);
+
+            $listingSwine->syncFromSwine();
+
+            // Update original swine status
+            $swine->update([
+                'status' => 'available',
             ]);
         }
-    }
 
-    // Attach swine to listing and update status
-    foreach ($request->swine_ids as $swineId) {
-        $swine = Swine::findOrFail($swineId);
+        // Update aggregate attributes
+        $listing->syncAggregateAttributes();
+        
+        // Optional: Update the clearance to link back to this listing
+        if ($request->vetmed_clearance_id) {
+            $clearance = VetmedClearance::find($request->vetmed_clearance_id);
+            if ($clearance) {
+                $clearance->update([
+                    'marketplace_listing_id' => $listing->id
+                ]);
+            }
+        }
+    });
 
-        // Create listing_swine record
-        $listingSwine = ListingSwine::create([
-            'listing_id' => $listing->id,
-            'swine_id' => $swine->id,
-            'seller_id' => $user->id,
-            'status' => 'available', // status for the listing
-        ]);
-
-        $listingSwine->syncFromSwine();
-
-        // Update original swine status
-        $swine->update([
-            'status' => 'available',
-        ]);
-    }
-
-    // Update aggregate attributes
-    $listing->syncAggregateAttributes();
-});
-
-
-    
-
+    // Redirect or return response
     return redirect()->route('marketplace.seller.index')
-                     ->with('success', 'Marketplace listing created successfully.');
+        ->with('success', 'Listing created successfully!');
 }
 
 
     // 🧩 Edit existing listing
-    public function edit(Request $request, $id)
+   public function edit(Request $request, $id)
 {
-    
     $user = $request->user();
-        $listing = MarketplaceListing::with(['province', 'municipal', 'barangay',
-         'listingSwine', 'seller.userInformation', 'photos'])
-        ->where('seller_id', $user->id)
-        ->where('id', $id)
-        ->firstOrFail();
-        
+    $listing = MarketplaceListing::with([
+        'province', 
+        'municipal', 
+        'barangay',
+        'listingSwine', 
+        'seller.userInformation', 
+        'photos',
+        'vetmedClearance' // Add this to load vetmed clearance
+    ])
+    ->where('seller_id', $user->id)
+    ->where('id', $id)
+    ->firstOrFail();
 
-// Then map photos to paths
-$listing->gallery_images = $listing->photos->map(fn($p) => $p->path)->toArray();
-$listing->gallery_image_ids = $listing->photos->pluck('id')->toArray();
+    // Then map photos to paths
+    $listing->gallery_images = $listing->photos->map(fn($p) => $p->path)->toArray();
+    $listing->gallery_image_ids = $listing->photos->pluck('id')->toArray();
 
-        // Combine full address
-        $listing->full_address = collect([
-            $listing->street,
-            $listing->purok,
-            optional($listing->barangay)->name,
-            optional($listing->municipal)->name,
-            optional($listing->province)->name,
-        ])->filter()->join(', ');
-       
+    // Combine full address
+    $listing->full_address = collect([
+        $listing->street,
+        $listing->purok,
+        optional($listing->barangay)->name,
+        optional($listing->municipal)->name,
+        optional($listing->province)->name,
+    ])->filter()->join(', ');
 
-        // Swine owned by seller but not yet listed OR already in this listing
-        $userId = $listing->seller_id;
-       $availableSwine = Swine::where('owner_id', $userId)
-    ->where('status', 'active')
-    ->get();
+    // Swine owned by seller but not yet listed OR already in this listing
+    $userId = $listing->seller_id;
+    $availableSwine = Swine::where('owner_id', $userId)
+        ->where('status', 'active')
+        ->get();
 
- 
-       return Inertia::render('marketplace/seller/edit', [
-    'listing' => $listing->load(['listingSwine']),
-    'availableSwine' => $availableSwine,
-]);
-    }
+    return Inertia::render('marketplace/seller/edit', [
+        'listing' => $listing->load(['listingSwine']),
+        'availableSwine' => $availableSwine,
+        'vetmedClearance' => $listing->vetmedClearance, // Pass the vetmed clearance
+    ]);
+}
 
   public function update(Request $request, $id)
 {
